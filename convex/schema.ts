@@ -11,9 +11,9 @@ export default defineSchema({
   }),
 
   users: defineTable({
-    // Basic example from Convex docs: store name + tokenIdentifier
     name: v.string(),
-    // This links to Clerk; taken from ctx.auth.getUserIdentity().tokenIdentifier
+    email: v.string(),
     tokenIdentifier: v.string(),
+    twilioSubaccountSid: v.optional(v.string()),
   }).index("by_token", ["tokenIdentifier"]),
 });
