@@ -9,6 +9,7 @@
  */
 
 import type * as myFunctions from "../myFunctions.js";
+import type * as twilio from "../twilio.js";
 import type * as users from "../users.js";
 
 import type {
@@ -19,6 +20,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   myFunctions: typeof myFunctions;
+  twilio: typeof twilio;
   users: typeof users;
 }>;
 
