@@ -16,7 +16,11 @@ export const store = mutation({
       .unique();
 
     if (user !== null) {
-      const updatedFields: { name?: string; email?: string } = {};
+      const updatedFields: {
+        name?: string;
+        email?: string;
+        assignedNumbers?: string[];
+      } = {};
       if (user.name !== identity.name && identity.name !== undefined)
         updatedFields.name = identity.name;
 
@@ -33,6 +37,7 @@ export const store = mutation({
       name: identity.name ?? "Anonymous",
       email: identity.email ?? "",
       tokenIdentifier: identity.tokenIdentifier,
+      assignedNumbers: [],
     });
   },
 });
@@ -57,6 +62,35 @@ export const setTwilioSubaccountSid = mutation({
 
     await ctx.db.patch(args.userId, {
       twilioSubaccountSid: args.twilioSubaccountSid,
+    });
+  },
+});
+
+export const addAssignedNumberToCurrentUser = mutation({
+  args: {
+    phoneNumber: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error(
+        "Called addAssignedNumberToCurrentUser without authentication present",
+      );
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier),
+      )
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      assignedNumbers: [...(user.assignedNumbers ?? []), args.phoneNumber],
     });
   },
 });
