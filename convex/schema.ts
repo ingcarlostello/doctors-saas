@@ -14,6 +14,7 @@ export default defineSchema({
     name: v.string(),
     email: v.string(),
     tokenIdentifier: v.string(),
+    assignedNumbers: v.optional(v.array(v.string())),
     twilioSubaccountSid: v.optional(v.string()),
   }).index("by_token", ["tokenIdentifier"]),
 });
