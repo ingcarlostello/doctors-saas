@@ -39,6 +39,8 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
+
+
   navMain: [
     {
       title: "Dashboard",
@@ -66,6 +68,8 @@ const data = {
       icon: IconUsers,
     },
   ],
+
+
   navClouds: [
     {
       title: "Capture",
@@ -114,6 +118,8 @@ const data = {
       ],
     },
   ],
+
+
   navSecondary: [
     {
       title: "Settings",
@@ -131,6 +137,8 @@ const data = {
       icon: IconSearch,
     },
   ],
+
+  
   documents: [
     {
       name: "Data Library",
