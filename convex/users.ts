@@ -1,5 +1,69 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import {
+  action,
+  internalMutation,
+  internalQuery,
+  mutation,
+  query,
+} from "./_generated/server";
+import { ENV } from "../lib/env";
+
+function bytesToBase64(bytes: Uint8Array): string {
+  if (typeof btoa === "function") {
+    let binary = "";
+    for (const b of bytes) binary += String.fromCharCode(b);
+    return btoa(binary);
+  }
+  const BufferImpl = (globalThis as unknown as { Buffer?: typeof Buffer }).Buffer;
+  if (BufferImpl) return BufferImpl.from(bytes).toString("base64");
+  throw new Error("No hay encoder base64 disponible en este runtime");
+}
+
+function base64ToBytes(base64: string): Uint8Array {
+  if (typeof atob === "function") {
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+  const BufferImpl = (globalThis as unknown as { Buffer?: typeof Buffer }).Buffer;
+  if (BufferImpl) return new Uint8Array(BufferImpl.from(base64, "base64"));
+  throw new Error("No hay decoder base64 disponible en este runtime");
+}
+
+async function importAesGcmKeyFromBase64(masterKeyBase64: string): Promise<CryptoKey> {
+  const raw = base64ToBytes(masterKeyBase64);
+  const rawBuffer = raw.buffer.slice(
+    raw.byteOffset,
+    raw.byteOffset + raw.byteLength,
+  ) as ArrayBuffer;
+  return await crypto.subtle.importKey(
+    "raw",
+    rawBuffer,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"],
+  );
+}
+
+async function encryptWithAesGcmBase64(opts: {
+  masterKeyBase64: string;
+  plaintext: string;
+}): Promise<{ ciphertextBase64: string; ivBase64: string }> {
+  const key = await importAesGcmKeyFromBase64(opts.masterKeyBase64);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    enc.encode(opts.plaintext),
+  );
+  return {
+    ciphertextBase64: bytesToBase64(new Uint8Array(ciphertext)),
+    ivBase64: bytesToBase64(iv),
+  };
+}
 
 export const store = mutation({
   args: {},
@@ -109,5 +173,83 @@ export const currentUser = query({
         q.eq("tokenIdentifier", identity.tokenIdentifier),
       )
       .unique();
+  },
+});
+
+export const setCurrentUserTwilioSubaccountAuthToken = action({
+  args: {
+    authToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("No autenticado");
+
+    const user = await ctx.runQuery(api.users.currentUser, {});
+    if (!user) throw new Error("Usuario no encontrado");
+    if (!user.twilioSubaccountSid) {
+      throw new Error("Este usuario no tiene subcuenta de Twilio configurada");
+    }
+
+    const masterKey = ENV.TWILIO_SUBACCOUNT_AUTH_TOKEN_MASTER_KEY;
+    if (!masterKey) {
+      throw new Error("TWILIO_SUBACCOUNT_AUTH_TOKEN_MASTER_KEY no configurada");
+    }
+
+    const encrypted = await encryptWithAesGcmBase64({
+      masterKeyBase64: masterKey,
+      plaintext: args.authToken,
+    });
+
+    await ctx.runMutation(internal.users.setTwilioSubaccountAuthTokenEncrypted, {
+      userId: user._id,
+      ciphertextBase64: encrypted.ciphertextBase64,
+      ivBase64: encrypted.ivBase64,
+    });
+
+    return { ok: true };
+  },
+});
+
+export const setTwilioSubaccountAuthTokenEncrypted = internalMutation({
+  args: {
+    userId: v.id("users"),
+    ciphertextBase64: v.string(),
+    ivBase64: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) throw new Error("Usuario no encontrado");
+
+    await ctx.db.patch(args.userId, {
+      twilioSubaccountAuthTokenCiphertext: args.ciphertextBase64,
+      twilioSubaccountAuthTokenIv: args.ivBase64,
+    });
+  },
+});
+
+export const getTwilioWebhookSigningKeyByAccountSid = internalQuery({
+  args: {
+    accountSid: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_twilio_subaccount_sid", (q) =>
+        q.eq("twilioSubaccountSid", args.accountSid),
+      )
+      .unique();
+
+    if (!user) return null;
+    if (
+      !user.twilioSubaccountAuthTokenCiphertext ||
+      !user.twilioSubaccountAuthTokenIv
+    ) {
+      return null;
+    }
+
+    return {
+      ciphertextBase64: user.twilioSubaccountAuthTokenCiphertext,
+      ivBase64: user.twilioSubaccountAuthTokenIv,
+    };
   },
 });
