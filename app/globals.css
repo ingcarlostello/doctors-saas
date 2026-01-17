@@ -87,6 +87,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Animación personalizada heartbeat */
   --animate-heartbeat: heartbeat 2s infinite ease-in-out;
 
   @keyframes heartbeat {
@@ -103,6 +104,11 @@
       transform: scale(1);
     }
   }
+}
+
+/* Definir la clase de utilidad para Tailwind CSS v4 */
+@utility animate-heartbeat {
+  animation: var(--animate-heartbeat);
 }
 
 @layer base {
