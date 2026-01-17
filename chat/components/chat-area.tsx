@@ -19,26 +19,60 @@ interface ChatAreaProps {
   messages: Message[]
   onSendMessage: (content: string) => void
   isTyping: boolean
+  onUserChattingChange?: (isChatting: boolean) => void
+  isChatActive?: boolean
   onBack?: () => void
   showBackButton?: boolean
 }
 
-export function ChatArea({ contact, messages, onSendMessage, isTyping, onBack, showBackButton }: ChatAreaProps) {
+export function ChatArea({
+  contact,
+  messages,
+  onSendMessage,
+  isTyping,
+  onUserChattingChange,
+  isChatActive,
+  onBack,
+  showBackButton,
+}: ChatAreaProps) {
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesViewportRef = useRef<HTMLDivElement>(null)
+  const idleTimerRef = useRef<number | null>(null)
   const currentId = contact?.id
   const inputValue = currentId ? drafts[currentId] ?? "" : ""
+  const chatActive = Boolean(isChatActive)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    messagesEndRef.current?.scrollIntoView({ behavior: "instant" })
+  }
+
+  const bumpUserChatting = () => {
+    onUserChattingChange?.(true)
+    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
+    idleTimerRef.current = window.setTimeout(() => {
+      onUserChattingChange?.(false)
+    }, 2500)
   }
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
+  useEffect(() => {
+    return () => {
+      if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
+      onUserChattingChange?.(false)
+    }
+  }, [onUserChattingChange])
+
+  useEffect(() => {
+    if (!currentId) onUserChattingChange?.(false)
+  }, [currentId, onUserChattingChange])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!currentId) return
+    bumpUserChatting()
     const value = e.target.value
     setDrafts((prev) => {
       if (value === "") {
@@ -62,6 +96,7 @@ export function ChatArea({ contact, messages, onSendMessage, isTyping, onBack, s
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    bumpUserChatting()
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -93,7 +128,7 @@ export function ChatArea({ contact, messages, onSendMessage, isTyping, onBack, s
           )}
           <div className="relative">
             <img
-              src={contact.avatar || "/placeholder.svg"}
+              src={contact.avatar || "/user-default.jpg"}
               alt={contact.name}
               className="w-10 h-10 rounded-full object-cover"
             />
@@ -120,9 +155,12 @@ export function ChatArea({ contact, messages, onSendMessage, isTyping, onBack, s
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-background to-muted/20">
+      <div
+        ref={messagesViewportRef}
+        className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-background to-muted/20"
+      >
         {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
+          <MessageBubble key={message.id} message={message} isChatActive={chatActive} viewportRef={messagesViewportRef} />
         ))}
 
         {/* Typing Indicator */}
@@ -170,6 +208,11 @@ export function ChatArea({ contact, messages, onSendMessage, isTyping, onBack, s
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onFocus={bumpUserChatting}
+            onBlur={() => {
+              if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
+              onUserChattingChange?.(false)
+            }}
             className="flex-1 px-4 py-2 bg-muted text-foreground placeholder:text-muted-foreground rounded-lg border-none outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
           />
           <button

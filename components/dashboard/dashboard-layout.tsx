@@ -7,8 +7,10 @@ import { Sidebar } from "./sidebar"
 import { TopBar } from "./top-bar"
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useStoreUserEffect } from "@/hooks/useStoreUserEffect"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  useStoreUserEffect()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (

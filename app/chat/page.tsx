@@ -1,173 +1,123 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ChatList } from "@/chat/components/chat-list"
 import { ChatArea } from "@/chat/components/chat-area"
 import { Message } from "@/chat/components/message-bubble"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+import { useAction, useMutation, useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { Doc, Id } from "@/convex/_generated/dataModel"
+import { useStoreUserEffect } from "@/hooks/useStoreUserEffect"
 
-// Initial mock data
-const initialChats = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    avatar: "/negra.png",
-    lastMessage: "That sounds great! Let me know when you're free",
-    timestamp: "2m",
-    unreadCount: 2,
-    isOnline: true,
-    messageStatus: "read" as const,
-  },
-  {
-    id: "2",
-    name: "Alex Chen",
-    avatar: "/asiatico.png",
-    lastMessage: "I'll send you the files tomorrow",
-    timestamp: "15m",
-    unreadCount: 0,
-    isOnline: true,
-    messageStatus: "delivered" as const,
-  },
-  {
-    id: "3",
-    name: "Design Team",
-    avatar: "/empresa.png",
-    lastMessage: "Meeting scheduled for 3 PM",
-    timestamp: "1h",
-    unreadCount: 5,
-    isOnline: false,
-    messageStatus: "sent" as const,
-  },
-  {
-    id: "4",
-    name: "Michael Brown",
-    avatar: "/empresario.png",
-    lastMessage: "Thanks for your help!",
-    timestamp: "3h",
-    unreadCount: 0,
-    isOnline: false,
-    messageStatus: "read" as const,
-  },
-  {
-    id: "5",
-    name: "Emma Wilson",
-    avatar: "/rubia.png",
-    lastMessage: "See you at the event!",
-    timestamp: "1d",
-    unreadCount: 0,
-    isOnline: true,
-    messageStatus: "read" as const,
-  },
-]
-
-const initialMessages: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "m1",
-      content: "Hey! How are you doing?",
-      timestamp: "10:30 AM",
-      isSent: false,
-      status: "read",
-      type: "text",
-    },
-    {
-      id: "m2",
-      content: "I'm doing great, thanks for asking! Just finished a big project.",
-      timestamp: "10:32 AM",
-      isSent: true,
-      status: "read",
-      type: "text",
-    },
-    {
-      id: "m3",
-      content: "That's awesome! We should celebrate. Want to grab coffee sometime this week?",
-      timestamp: "10:33 AM",
-      isSent: false,
-      status: "read",
-      type: "text",
-    },
-    {
-      id: "m4",
-      content: "",
-      timestamp: "10:35 AM",
-      isSent: false,
-      status: "read",
-      type: "image",
-      images: ["/cozy-coffee-shop.png", "/latte-art-coffee.jpg"],
-    },
-    {
-      id: "m5",
-      content: "Here's a voice note about the location",
-      timestamp: "10:36 AM",
-      isSent: false,
-      status: "read",
-      type: "voice",
-      voiceDuration: 15,
-    },
-    {
-      id: "m6",
-      content: "That looks perfect! I'd love to. How about Thursday afternoon?",
-      timestamp: "10:40 AM",
-      isSent: true,
-      status: "read",
-      type: "text",
-    },
-    {
-      id: "m7",
-      content: "That sounds great! Let me know when you're free",
-      timestamp: "10:42 AM",
-      isSent: false,
-      status: "read",
-      type: "text",
-    },
-  ],
-  "2": [
-    {
-      id: "m1",
-      content: "Did you get a chance to review the designs?",
-      timestamp: "9:00 AM",
-      isSent: true,
-      status: "delivered",
-      type: "text",
-    },
-    {
-      id: "m2",
-      content: "Yes! They look amazing. A few minor tweaks needed.",
-      timestamp: "9:15 AM",
-      isSent: false,
-      status: "read",
-      type: "text",
-    },
-    {
-      id: "m3",
-      content: "I'll send you the files tomorrow",
-      timestamp: "9:20 AM",
-      isSent: false,
-      status: "read",
-      type: "text",
-    },
-  ],
+type UiChat = {
+  id: string
+  name: string
+  avatar: string
+  lastMessage: string
+  timestamp: string
+  unreadCount: number
+  isOnline: boolean
+  messageStatus: "sent" | "delivered" | "read"
 }
 
-// Auto-reply messages
-const autoReplies = [
-  "That's interesting! Tell me more.",
-  "I completely agree with you.",
-  "Let me think about that for a moment...",
-  "Great idea! I love it.",
-  "Thanks for sharing that with me!",
-  "I'll get back to you on that.",
-  "Sounds like a plan!",
-  "That makes a lot of sense.",
-]
+function formatRelativeTime(epochMs: number | undefined): string {
+  if (!epochMs) return ""
+  const diffMs = Date.now() - epochMs
+  const diffSeconds = Math.max(0, Math.floor(diffMs / 1000))
+  if (diffSeconds < 60) return `${diffSeconds}s`
+  const diffMinutes = Math.floor(diffSeconds / 60)
+  if (diffMinutes < 60) return `${diffMinutes}m`
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return `${diffHours}h`
+  const diffDays = Math.floor(diffHours / 24)
+  return `${diffDays}d`
+}
+
+function mapMessageStatus(status: Doc<"messages">["status"]): Message["status"] {
+  if (status === "delivered") return "delivered"
+  if (status === "read") return "read"
+  return "sent"
+}
+
+function messageToUiMessage(message: Doc<"messages">): Message {
+  const ts = new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  const isSent = message.direction === "out"
+  const attachments = message.attachments ?? []
+  const hasImages = attachments.some((a) => a.kind === "image")
+  const hasAudio = attachments.some((a) => a.kind === "audio")
+
+  if (message.is_deleted) {
+    return {
+      id: message._id,
+      content: "Message deleted",
+      timestamp: ts,
+      isSent,
+      status: mapMessageStatus(message.status),
+      type: "text",
+    }
+  }
+
+  if (hasImages) {
+    const images = attachments.filter((a) => a.kind === "image").map((a) => a.url ?? "/placeholder.svg")
+    return {
+      id: message._id,
+      content: "",
+      timestamp: ts,
+      isSent,
+      status: mapMessageStatus(message.status),
+      type: "image",
+      images,
+    }
+  }
+
+  if (hasAudio) {
+    const audio = attachments.find((a) => a.kind === "audio") ?? null
+    return {
+      id: message._id,
+      content: message.content ?? "",
+      timestamp: ts,
+      isSent,
+      status: mapMessageStatus(message.status),
+      type: "voice",
+      voiceDuration: audio?.durationSeconds,
+    }
+  }
+
+  return {
+    id: message._id,
+    content: message.content ?? "",
+    timestamp: ts,
+    isSent,
+    status: mapMessageStatus(message.status),
+    type: "text",
+  }
+}
 
 export default function ChatPage() {
-  const [chats, setChats] = useState(initialChats)
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null)
-  const [messages, setMessages] = useState<Record<string, Message[]>>(initialMessages)
   const [searchQuery, setSearchQuery] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
   const [isMobileView, setIsMobileView] = useState(false)
+  const [selectedConversationId, setSelectedConversationId] = useState<Id<"conversations"> | null>(null)
+  const [isUserChatting, setIsUserChatting] = useState(false)
+  const [isChatInterfaceActive, setIsChatInterfaceActive] = useState(true)
+
+  const { isAuthenticated } = useStoreUserEffect()
+  const conversations = useQuery(api.chat.listConversations, isAuthenticated ? {} : "skip")
+  const messages = useQuery(
+    api.chat.getMessages,
+    selectedConversationId && isAuthenticated ? { conversationId: selectedConversationId } : "skip",
+  )
+  const markConversationRead = useMutation(api.chat.markConversationRead)
+  const sendMessage = useMutation(api.chat.sendMessage)
+  const sendWhatsAppMessage = useAction(api.chatActions.sendWhatsAppMessage)
+
+  const notificationAudioRef = useRef<HTMLAudioElement | null>(null)
+  const notificationAudioLoadedRef = useRef(false)
+  const notificationAudioLoadErrorRef = useRef(false)
+  const hasInitializedConversationSnapshotRef = useRef(false)
+  const prevConversationSnapshotRef = useRef<Map<string, { unreadCount: number; lastMessageAt: number }>>(new Map())
+  const lastAutoMarkReadRef = useRef<string | null>(null)
+  const markReadInFlightRef = useRef<string | null>(null)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -178,111 +128,251 @@ export default function ChatPage() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  const selectedChat = chats.find((c) => c.id === selectedChatId)
-  const currentMessages = selectedChatId ? messages[selectedChatId] || [] : []
+  useEffect(() => {
+    const update = () => {
+      setIsChatInterfaceActive(!document.hidden && document.hasFocus())
+    }
+    update()
+    window.addEventListener("focus", update)
+    window.addEventListener("blur", update)
+    document.addEventListener("visibilitychange", update)
+    return () => {
+      window.removeEventListener("focus", update)
+      window.removeEventListener("blur", update)
+      document.removeEventListener("visibilitychange", update)
+    }
+  }, [])
 
-  const handleSelectChat = (id: string) => {
-    setSelectedChatId(id)
-    // Clear unread count
-    setChats((prev) => prev.map((chat) => (chat.id === id ? { ...chat, unreadCount: 0 } : chat)))
-  }
+  useEffect(() => {
+    if (!isAuthenticated) return
 
-  const handleSendMessage = (content: string) => {
-    if (!selectedChatId) return
+    notificationAudioLoadedRef.current = false
+    notificationAudioLoadErrorRef.current = false
 
-    const newMessage: Message = {
-      id: `m${Date.now()}`,
-      content,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      isSent: true,
-      status: "sent",
-      type: "text",
+    let audio: HTMLAudioElement | null = null
+
+    try {
+      audio = new Audio("/notificationChat.MP3")
+      audio.preload = "auto"
+      audio.addEventListener("canplaythrough", () => {
+        notificationAudioLoadedRef.current = true
+      })
+      audio.addEventListener("error", () => {
+        notificationAudioLoadErrorRef.current = true
+      })
+      audio.load()
+      notificationAudioRef.current = audio
+    } catch {
+      notificationAudioLoadErrorRef.current = true
     }
 
-    setMessages((prev) => ({
-      ...prev,
-      [selectedChatId]: [...(prev[selectedChatId] || []), newMessage],
-    }))
-
-    // Update chat preview
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat.id === selectedChatId
-          ? { ...chat, lastMessage: content, timestamp: "now", messageStatus: "sent" as const }
-          : chat,
-      ),
-    )
-
-    // Simulate message status updates
-    setTimeout(() => {
-      setMessages((prev) => ({
-        ...prev,
-        [selectedChatId]: prev[selectedChatId].map((m) => (m.id === newMessage.id ? { ...m, status: "delivered" } : m)),
-      }))
-    }, 1000)
-
-    setTimeout(() => {
-      setMessages((prev) => ({
-        ...prev,
-        [selectedChatId]: prev[selectedChatId].map((m) => (m.id === newMessage.id ? { ...m, status: "read" } : m)),
-      }))
-    }, 2000)
-
-    // Simulate typing and auto-reply
-    setTimeout(() => setIsTyping(true), 1500)
-    setTimeout(() => {
-      setIsTyping(false)
-      const replyMessage: Message = {
-        id: `m${Date.now()}`,
-        content: autoReplies[Math.floor(Math.random() * autoReplies.length)],
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        isSent: false,
-        status: "read",
-        type: "text",
+    return () => {
+      hasInitializedConversationSnapshotRef.current = false
+      prevConversationSnapshotRef.current = new Map()
+      const current = notificationAudioRef.current
+      if (current) {
+        current.pause()
+        current.src = ""
       }
-      setMessages((prev) => ({
-        ...prev,
-        [selectedChatId]: [...(prev[selectedChatId] || []), replyMessage],
-      }))
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === selectedChatId ? { ...chat, lastMessage: replyMessage.content, timestamp: "now" } : chat,
-        ),
-      )
-    }, 3500)
+      notificationAudioRef.current = null
+      notificationAudioLoadedRef.current = false
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    const unlock = async () => {
+      const audio = notificationAudioRef.current
+      if (!audio || notificationAudioLoadErrorRef.current) return
+      try {
+        audio.muted = true
+        await audio.play()
+        audio.pause()
+        audio.currentTime = 0
+        audio.muted = false
+      } catch {}
+    }
+
+    document.addEventListener("pointerdown", unlock, { once: true })
+    document.addEventListener("keydown", unlock, { once: true })
+    return () => {
+      document.removeEventListener("pointerdown", unlock)
+      document.removeEventListener("keydown", unlock)
+    }
+  }, [])
+
+  const playNotificationSound = async () => {
+    const audio = notificationAudioRef.current
+    if (!audio) return
+    if (notificationAudioLoadErrorRef.current) return
+    try {
+      if (!notificationAudioLoadedRef.current) audio.load()
+      audio.pause()
+      audio.currentTime = 0
+      await audio.play()
+    } catch {}
+  }
+
+  const isChatActive = Boolean(selectedConversationId) && isChatInterfaceActive
+
+  const uiChats: UiChat[] = useMemo(() => {
+    const list = conversations ?? []
+    return list.map((c) => {
+      const name = c.externalContact.name?.trim() || c.externalContact.phoneNumber
+      const lastMessage = c.lastMessagePreview ?? ""
+      const timestamp = formatRelativeTime(c.lastMessageAt)
+      const unreadCount = c.unreadCount ?? 0
+      const isSelectedAndActive = isChatActive && selectedConversationId === c._id
+      const effectiveUnreadCount = isSelectedAndActive ? 0 : unreadCount
+      const effectiveStatus: UiChat["messageStatus"] = isSelectedAndActive
+        ? "read"
+        : unreadCount > 0
+          ? "delivered"
+          : "read"
+      return {
+        id: c._id,
+        name,
+        avatar: "/user-default.jpg",
+        lastMessage,
+        timestamp,
+        unreadCount: effectiveUnreadCount,
+        isOnline: false,
+        messageStatus: effectiveStatus,
+      }
+    })
+  }, [conversations, isChatActive, selectedConversationId])
+
+  const selectedConversation = useMemo(() => {
+    if (!selectedConversationId) return null
+    return (conversations ?? []).find((c) => c._id === selectedConversationId) ?? null
+  }, [conversations, selectedConversationId])
+
+  const currentMessages = useMemo(() => {
+    return (messages ?? []).map(messageToUiMessage)
+  }, [messages])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    if (!selectedConversationId) return
+    if (!isChatActive) return
+    const unreadCount = selectedConversation?.unreadCount ?? 0
+    if (unreadCount <= 0) return
+    if (markReadInFlightRef.current === selectedConversationId) return
+
+    const key = `${selectedConversationId}:${unreadCount}`
+    if (lastAutoMarkReadRef.current === key) return
+    lastAutoMarkReadRef.current = key
+
+    markReadInFlightRef.current = selectedConversationId
+    void markConversationRead({ conversationId: selectedConversationId }).finally(() => {
+      if (markReadInFlightRef.current === selectedConversationId) markReadInFlightRef.current = null
+    })
+  }, [
+    isAuthenticated,
+    isChatActive,
+    markConversationRead,
+    selectedConversation?.unreadCount,
+    selectedConversationId,
+  ])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    if (!conversations) return
+
+    const nextSnapshot = new Map<string, { unreadCount: number; lastMessageAt: number }>()
+    for (const c of conversations) {
+      nextSnapshot.set(c._id, {
+        unreadCount: c.unreadCount ?? 0,
+        lastMessageAt: c.lastMessageAt ?? 0,
+      })
+    }
+
+    if (!hasInitializedConversationSnapshotRef.current) {
+      hasInitializedConversationSnapshotRef.current = true
+      prevConversationSnapshotRef.current = nextSnapshot
+      return
+    }
+
+    if (isUserChatting) {
+      prevConversationSnapshotRef.current = nextSnapshot
+      return
+    }
+
+    let shouldPlay = false
+    for (const c of conversations) {
+      if (selectedConversationId === c._id) continue
+      const prev = prevConversationSnapshotRef.current.get(c._id)
+      if (!prev) continue
+
+      const nextUnread = c.unreadCount ?? 0
+      const nextLast = c.lastMessageAt ?? 0
+      if (nextUnread > prev.unreadCount && nextLast > prev.lastMessageAt) {
+        shouldPlay = true
+        break
+      }
+    }
+
+    prevConversationSnapshotRef.current = nextSnapshot
+
+    if (shouldPlay) void playNotificationSound()
+  }, [conversations, isAuthenticated, isUserChatting, selectedConversationId])
+
+  const handleSelectChat = async (id: string) => {
+    const conversationId = id as Id<"conversations">
+    setSelectedConversationId(conversationId)
+    setIsUserChatting(false)
+    if (markReadInFlightRef.current === conversationId) return
+    markReadInFlightRef.current = conversationId
+    try {
+      await markConversationRead({ conversationId })
+    } finally {
+      if (markReadInFlightRef.current === conversationId) markReadInFlightRef.current = null
+    }
+  }
+
+  const handleSendMessage = async (content: string) => {
+    if (!selectedConversationId) return
+    if (selectedConversation?.channel === "whatsapp") {
+      await sendWhatsAppMessage({ conversationId: selectedConversationId, content })
+      return
+    }
+    await sendMessage({ conversationId: selectedConversationId, content })
   }
 
   const handleNewChat = () => {
-    const newChat = {
-      id: `${Date.now()}`,
-      name: "New Contact",
-      avatar: "/diverse-person-avatars.png",
-      lastMessage: "Start a conversation",
-      timestamp: "now",
-      unreadCount: 0,
-      isOnline: true,
-      messageStatus: "read" as const,
-    }
-    setChats((prev) => [newChat, ...prev])
-    setSelectedChatId(newChat.id)
-    setMessages((prev) => ({ ...prev, [newChat.id]: [] }))
+    const first = (conversations ?? [])[0]?._id ?? null
+    if (first) setSelectedConversationId(first)
   }
 
   const handleBack = () => {
-    setSelectedChatId(null)
+    setSelectedConversationId(null)
+    setIsUserChatting(false)
   }
+
+  const selectedChat: UiChat | null = selectedConversation
+    ? {
+        id: selectedConversation._id,
+        name: selectedConversation.externalContact.name?.trim() || selectedConversation.externalContact.phoneNumber,
+        avatar: "/user-default.jpg",
+        lastMessage: selectedConversation.lastMessagePreview ?? "",
+        timestamp: formatRelativeTime(selectedConversation.lastMessageAt),
+        unreadCount: isChatActive ? 0 : (selectedConversation.unreadCount ?? 0),
+        isOnline: false,
+        messageStatus: isChatActive ? "read" : (selectedConversation.unreadCount ?? 0) > 0 ? "delivered" : "read",
+      }
+    : null
 
   return (
     <DashboardLayout>
-      {/* Mobile view */}
       {isMobileView ? (
-        selectedChatId ? (
+        selectedConversationId ? (
           <div className="h-[calc(100vh-4rem)] flex flex-col dark">
             <ChatArea
               contact={selectedChat ? { ...selectedChat } : null}
               messages={currentMessages}
               onSendMessage={handleSendMessage}
-              isTyping={isTyping}
+              isTyping={false}
+              onUserChattingChange={setIsUserChatting}
+              isChatActive={isChatActive}
               onBack={handleBack}
               showBackButton
             />
@@ -290,8 +380,8 @@ export default function ChatPage() {
         ) : (
           <div className="h-[calc(100vh-4rem)] flex flex-col dark">
             <ChatList
-              chats={chats}
-              selectedChatId={selectedChatId}
+              chats={uiChats}
+              selectedChatId={selectedConversationId}
               onSelectChat={handleSelectChat}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -300,12 +390,11 @@ export default function ChatPage() {
           </div>
         )
       ) : (
-        // Desktop/Tablet view
         <div className="h-[calc(100vh-4rem)] flex dark">
           <div className="w-[30%] min-w-[280px] max-w-[400px]">
             <ChatList
-              chats={chats}
-              selectedChatId={selectedChatId}
+              chats={uiChats}
+              selectedChatId={selectedConversationId}
               onSelectChat={handleSelectChat}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
@@ -316,7 +405,9 @@ export default function ChatPage() {
             contact={selectedChat ? { ...selectedChat } : null}
             messages={currentMessages}
             onSendMessage={handleSendMessage}
-            isTyping={isTyping}
+            isTyping={false}
+            onUserChattingChange={setIsUserChatting}
+            isChatActive={isChatActive}
           />
         </div>
       )}

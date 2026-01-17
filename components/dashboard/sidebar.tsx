@@ -2,9 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Users, Megaphone, Settings, X, Activity, MessagesSquare } from "lucide-react"
+import { Calendar, Users, Megaphone, X, Activity, MessagesSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 
 const navigation = [
   { name: "Calendar", href: "/dashboard", icon: Calendar },
@@ -17,8 +19,19 @@ interface SidebarProps {
   onClose?: () => void
 }
 
+function UnreadNotificationDot() {
+  return (
+    <span
+      aria-hidden="true"
+      className="h-2 w-2 shrink-0 rounded-full bg-destructive animate-heartbeat motion-reduce:animate-none"
+    />
+  )
+}
+
 export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
+  const conversations = useQuery(api.chat.listConversations, {})
+  const hasUnreadMessages = (conversations ?? []).some((c) => (c.unreadCount ?? 0) > 0)
 
   return (
     <div className="flex h-full flex-col border-r border-border bg-card">
@@ -40,6 +53,7 @@ export function Sidebar({ onClose }: SidebarProps) {
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
           const isActive = pathname === item.href
+          const showUnreadDot = item.href === "/chat" && hasUnreadMessages && !isActive
           return (
             <Link
               key={item.name}
@@ -52,7 +66,10 @@ export function Sidebar({ onClose }: SidebarProps) {
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              {item.name}
+              <span className="flex items-center gap-2">
+                <span>{item.name}</span>
+                {showUnreadDot ? <UnreadNotificationDot /> : null}
+              </span>
             </Link>
           )
         })}

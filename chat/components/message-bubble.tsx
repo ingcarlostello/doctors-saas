@@ -2,7 +2,8 @@
 
 import { Check, CheckCheck, Play, Pause } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import type { RefObject } from "react"
+import { useEffect, useRef, useState } from "react"
 
 export interface Message {
   id: string
@@ -17,15 +18,57 @@ export interface Message {
 
 interface MessageBubbleProps {
   message: Message
+  isChatActive?: boolean
+  viewportRef?: RefObject<HTMLElement | null>
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, isChatActive, viewportRef }: MessageBubbleProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [hasBeenVisible, setHasBeenVisible] = useState(false)
+  const bubbleRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!isChatActive) return
+    if (!message.isSent) return
+    if (message.status !== "delivered") return
+    if (hasBeenVisible) return
+
+    const el = bubbleRef.current
+    if (!el) return
+
+    if (typeof IntersectionObserver === "undefined") return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (!entry) return
+        if (entry.isIntersecting) {
+          setHasBeenVisible(true)
+          observer.disconnect()
+        }
+      },
+      {
+        root: viewportRef?.current ?? null,
+        threshold: 0.6,
+      },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasBeenVisible, isChatActive, message.isSent, message.status, viewportRef])
 
   const getStatusIcon = () => {
     if (message.status === "sent") return <Check className="w-3 h-3" />
-    if (message.status === "delivered") return <CheckCheck className="w-3 h-3" />
+    if (message.status === "delivered")
+      return (
+        <CheckCheck
+          className={cn(
+            "w-3 h-3",
+            isChatActive && (hasBeenVisible || typeof IntersectionObserver === "undefined") && "text-emerald-400",
+          )}
+        />
+      )
     return <CheckCheck className="w-3 h-3 text-emerald-400" />
   }
 
@@ -47,6 +90,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
   return (
     <div
+      ref={bubbleRef}
       className={cn(
         "flex mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
         message.isSent ? "justify-end" : "justify-start",

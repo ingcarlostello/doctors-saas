@@ -79,7 +79,7 @@ export function ChatList({
             {/* Avatar */}
             <div className="relative shrink-0">
               <img
-                src={chat.avatar || "/placeholder.svg"}
+                src={chat.avatar || "/user-default.jpg"}
                 alt={chat.name}
                 className="w-12 h-12 rounded-full object-cover"
               />
