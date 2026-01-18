@@ -267,10 +267,17 @@ export const listWhatsAppTemplates = action({
       throw new Error(`Error al obtener templates de Twilio: ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      contents?: Array<{
+        sid: string;
+        friendly_name?: string;
+        language?: string;
+        variables?: unknown;
+        types?: Record<string, unknown>;
+      }>;
+    };
 
-    // Mapeamos para devolver un formato limpio
-    return (data.contents || []).map((t: any) => ({
+    return (data.contents || []).map((t) => ({
       sid: t.sid,
       friendlyName: t.friendly_name,
       language: t.language,
