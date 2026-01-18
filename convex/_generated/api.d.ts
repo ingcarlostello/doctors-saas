@@ -15,6 +15,7 @@ import type * as chatInternal from "../chatInternal.js";
 import type * as chatUtils from "../chatUtils.js";
 import type * as http from "../http.js";
 import type * as myFunctions from "../myFunctions.js";
+import type * as patients from "../patients.js";
 import type * as twilio from "../twilio.js";
 import type * as users from "../users.js";
 
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   chatUtils: typeof chatUtils;
   http: typeof http;
   myFunctions: typeof myFunctions;
+  patients: typeof patients;
   twilio: typeof twilio;
   users: typeof users;
 }>;
