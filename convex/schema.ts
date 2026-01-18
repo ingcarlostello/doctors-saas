@@ -106,4 +106,17 @@ export default defineSchema({
     lastSeenAt: v.number(),
     isOnline: v.boolean(),
   }).index("by_user", ["userId"]),
+
+  patients: defineTable({
+    userId: v.id("users"),
+    fullName: v.string(),
+    phoneNumber: v.string(),
+    dni: v.string(),
+    email: v.optional(v.string()),
+    lastAppointmentDate: v.optional(v.number()),
+    nextAppointmentDate: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_dni", ["userId", "dni"])
+    .index("by_user_phone", ["userId", "phoneNumber"]),
 });

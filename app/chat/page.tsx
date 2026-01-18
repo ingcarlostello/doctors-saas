@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { ChatList } from "@/chat/components/chat-list"
 import { ChatArea } from "@/chat/components/chat-area"
 import { Message } from "@/chat/components/message-bubble"
@@ -95,11 +96,22 @@ function messageToUiMessage(message: Doc<"messages">): Message {
 }
 
 export default function ChatPage() {
+  const searchParams = useSearchParams()
+  const initialChatId = searchParams.get("id")
+
   const [searchQuery, setSearchQuery] = useState("")
   const [isMobileView, setIsMobileView] = useState(false)
-  const [selectedConversationId, setSelectedConversationId] = useState<Id<"conversations"> | null>(null)
+  const [selectedConversationId, setSelectedConversationId] = useState<Id<"conversations"> | null>(
+    initialChatId ? (initialChatId as Id<"conversations">) : null
+  )
   const [isUserChatting, setIsUserChatting] = useState(false)
   const [isChatInterfaceActive, setIsChatInterfaceActive] = useState(true)
+
+  useEffect(() => {
+    if (initialChatId) {
+      setSelectedConversationId(initialChatId as Id<"conversations">)
+    }
+  }, [initialChatId])
 
   const { isAuthenticated } = useStoreUserEffect()
   const conversations = useQuery(api.chat.listConversations, isAuthenticated ? {} : "skip")
@@ -189,7 +201,7 @@ export default function ChatPage() {
         audio.pause()
         audio.currentTime = 0
         audio.muted = false
-      } catch {}
+      } catch { }
     }
 
     document.addEventListener("pointerdown", unlock, { once: true })
@@ -209,7 +221,7 @@ export default function ChatPage() {
       audio.pause()
       audio.currentTime = 0
       await audio.play()
-    } catch {}
+    } catch { }
   }
 
   const isChatActive = Boolean(selectedConversationId) && isChatInterfaceActive
@@ -350,15 +362,15 @@ export default function ChatPage() {
 
   const selectedChat: UiChat | null = selectedConversation
     ? {
-        id: selectedConversation._id,
-        name: selectedConversation.externalContact.name?.trim() || selectedConversation.externalContact.phoneNumber,
-        avatar: "/user-default.jpg",
-        lastMessage: selectedConversation.lastMessagePreview ?? "",
-        timestamp: formatRelativeTime(selectedConversation.lastMessageAt),
-        unreadCount: isChatActive ? 0 : (selectedConversation.unreadCount ?? 0),
-        isOnline: false,
-        messageStatus: isChatActive ? "read" : (selectedConversation.unreadCount ?? 0) > 0 ? "delivered" : "read",
-      }
+      id: selectedConversation._id,
+      name: selectedConversation.externalContact.name?.trim() || selectedConversation.externalContact.phoneNumber,
+      avatar: "/user-default.jpg",
+      lastMessage: selectedConversation.lastMessagePreview ?? "",
+      timestamp: formatRelativeTime(selectedConversation.lastMessageAt),
+      unreadCount: isChatActive ? 0 : (selectedConversation.unreadCount ?? 0),
+      isOnline: false,
+      messageStatus: isChatActive ? "read" : (selectedConversation.unreadCount ?? 0) > 0 ? "delivered" : "read",
+    }
     : null
 
   return (

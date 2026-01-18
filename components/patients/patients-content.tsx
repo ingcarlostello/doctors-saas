@@ -1,7 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Filter, Plus, MoreHorizontal, Phone, Mail, Calendar } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Search, Filter, Plus, MoreHorizontal, Phone, Mail, Calendar, Eye, Edit, MessageSquareText } from "lucide-react"
+import { toast } from "sonner"
+import { useMutation, useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import { format } from "date-fns"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -13,101 +19,128 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PatientSheet } from "./patient-sheet"
-
-const patients = [
-  {
-    id: "1",
-    name: "María García",
-    phone: "+52 55 1234 5678",
-    email: "maria.garcia@email.com",
-    status: "Active",
-    lastVisit: "Jan 8, 2026",
-    lastVisitType: "Root Canal",
-    ltv: 2450,
-    avatar: "MG",
-  },
-  {
-    id: "2",
-    name: "Carlos Rodríguez",
-    phone: "+52 55 2345 6789",
-    email: "carlos.r@email.com",
-    status: "Active",
-    lastVisit: "Jan 5, 2026",
-    lastVisitType: "Cleaning",
-    ltv: 890,
-    avatar: "CR",
-  },
-  {
-    id: "3",
-    name: "Ana Martínez",
-    phone: "+52 55 3456 7890",
-    email: "ana.mtz@email.com",
-    status: "No-Show Risk",
-    lastVisit: "Nov 12, 2025",
-    lastVisitType: "Checkup",
-    ltv: 1250,
-    avatar: "AM",
-  },
-  {
-    id: "4",
-    name: "Roberto Sánchez",
-    phone: "+52 55 4567 8901",
-    email: "roberto.s@email.com",
-    status: "Inactive",
-    lastVisit: "Aug 20, 2025",
-    lastVisitType: "Extraction",
-    ltv: 580,
-    avatar: "RS",
-  },
-  {
-    id: "5",
-    name: "Laura Hernández",
-    phone: "+52 55 5678 9012",
-    email: "laura.h@email.com",
-    status: "Active",
-    lastVisit: "Jan 10, 2026",
-    lastVisitType: "Whitening",
-    ltv: 3200,
-    avatar: "LH",
-  },
-  {
-    id: "6",
-    name: "Miguel Torres",
-    phone: "+52 55 6789 0123",
-    email: "miguel.t@email.com",
-    status: "Active",
-    lastVisit: "Dec 28, 2025",
-    lastVisitType: "Crown",
-    ltv: 4100,
-    avatar: "MT",
-  },
-  {
-    id: "7",
-    name: "Patricia López",
-    phone: "+52 55 7890 1234",
-    email: "patricia.l@email.com",
-    status: "No-Show Risk",
-    lastVisit: "Oct 15, 2025",
-    lastVisitType: "Filling",
-    ltv: 720,
-    avatar: "PL",
-  },
-]
-
-const statusStyles: Record<string, string> = {
-  Active: "bg-success/10 text-success border-success/20",
-  Inactive: "bg-muted text-muted-foreground border-border",
-  "No-Show Risk": "bg-destructive/10 text-destructive border-destructive/20",
-}
+import { AddPatientDialog } from "./add-patient-dialog"
 
 export function PatientsContent() {
-  const [selectedPatient, setSelectedPatient] = useState<(typeof patients)[0] | null>(null)
+  const [selectedPatient, setSelectedPatient] = useState<any>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isAddPatientOpen, setIsAddPatientOpen] = useState(false)
+  const [patientToDelete, setPatientToDelete] = useState<any>(null)
+  const [patientToEdit, setPatientToEdit] = useState<any>(null)
 
-  const filteredPatients = patients.filter(
-    (patient) => patient.name.toLowerCase().includes(searchQuery.toLowerCase()) || patient.phone.includes(searchQuery),
-  )
+  const patients = useQuery(api.patients.list)
+  const createPatient = useMutation(api.patients.create)
+  const updatePatient = useMutation(api.patients.update)
+  const deletePatient = useMutation(api.patients.remove)
+  const startChat = useMutation(api.chat.upsertConversation)
+
+  const router = useRouter()
+
+  const handleSavePatient = async (data: any) => {
+    try {
+      if (patientToEdit) {
+        await updatePatient({
+          id: patientToEdit._id,
+          fullName: data.fullName,
+          phoneNumber: data.phoneNumber,
+          dni: data.dni,
+          email: data.email || undefined,
+          lastAppointmentDate: data.lastAppointmentDate ? data.lastAppointmentDate.getTime() : undefined,
+          nextAppointmentDate: data.nextAppointmentDate ? data.nextAppointmentDate.getTime() : undefined,
+        })
+        toast.success("Patient Updated", {
+          description: `${data.fullName}'s information has been updated.`,
+        })
+      } else {
+        await createPatient({
+          fullName: data.fullName,
+          phoneNumber: data.phoneNumber,
+          dni: data.dni,
+          email: data.email || undefined,
+          lastAppointmentDate: data.lastAppointmentDate ? data.lastAppointmentDate.getTime() : undefined,
+          nextAppointmentDate: data.nextAppointmentDate ? data.nextAppointmentDate.getTime() : undefined,
+        })
+        toast.success("Patient Added", {
+          description: `${data.fullName} has been added to your directory.`,
+        })
+      }
+      setIsAddPatientOpen(false)
+      setPatientToEdit(null)
+    } catch (error) {
+      toast.error(patientToEdit ? "Error Updating Patient" : "Error Adding Patient", {
+        description: "There was a problem saving the patient. Please try again.",
+      })
+      console.error(error)
+    }
+  }
+
+  const handleDeletePatient = async () => {
+    if (!patientToDelete) return
+
+    try {
+      await deletePatient({ id: patientToDelete._id })
+      toast.success("Patient Deleted", {
+        description: `${patientToDelete.fullName} has been removed from your directory.`,
+      })
+      setPatientToDelete(null)
+    } catch (error) {
+      toast.error("Error Deleting Patient", {
+        description: "There was a problem deleting the patient. Please try again.",
+      })
+      console.error(error)
+    }
+  }
+
+  const handleSendMessage = async (patient: any) => {
+    try {
+      const chatId = await startChat({
+        channel: "whatsapp",
+        externalContact: {
+          phoneNumber: patient.phoneNumber,
+          name: patient.fullName
+        }
+      })
+      router.push(`/chat?id=${chatId}`)
+    } catch (error) {
+      toast.error("Error opening chat", {
+        description: "Could not start conversation with this patient.",
+      })
+      console.error(error)
+    }
+  }
+
+  const handlePatientClick = (patient: any) => {
+    setSelectedPatient(patient)
+    setSheetOpen(true)
+  }
+
+  const filteredPatients = patients?.filter(
+    (patient) =>
+      patient.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      patient.phoneNumber.includes(searchQuery)
+  ) || []
+
+  // Helper to get initials
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -115,9 +148,15 @@ export function PatientsContent() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Patients</h1>
-          <p className="text-sm text-muted-foreground">{patients.length} patients in your directory</p>
+          <p className="text-sm text-muted-foreground">{patients?.length || 0} patients in your directory</p>
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => {
+            setPatientToEdit(null)
+            setIsAddPatientOpen(true)
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Patient
         </Button>
@@ -146,78 +185,159 @@ export function PatientsContent() {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-[280px]">Patient</TableHead>
-              <TableHead className="w-[120px]">Status</TableHead>
-              <TableHead className="w-[180px]">Last Visit</TableHead>
-              <TableHead className="w-[120px] text-right">LTV</TableHead>
+              <TableHead className="w-[120px]">DNI</TableHead>
+              <TableHead className="w-[150px]">Last Visit</TableHead>
+              <TableHead className="w-[150px]">Next Visit</TableHead>
               <TableHead className="w-[60px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPatients.map((patient) => (
-              <TableRow
-                key={patient.id}
-                className="cursor-pointer transition-colors hover:bg-secondary/50"
-                onClick={() => setSelectedPatient(patient)}
-              >
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-                      {patient.avatar}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-foreground">{patient.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{patient.phone}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={statusStyles[patient.status]}>
-                    {patient.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div>
-                    <p className="text-sm text-foreground">{patient.lastVisit}</p>
-                    <p className="text-xs text-muted-foreground">{patient.lastVisitType}</p>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <span className="font-mono text-sm font-medium text-foreground">${patient.ltv.toLocaleString()}</span>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Phone className="mr-2 h-4 w-4" />
-                        Call Patient
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Mail className="mr-2 h-4 w-4" />
-                        Send Message
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Schedule Appointment
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">Delete Patient</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredPatients.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-24 text-center">
+                  No results.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredPatients.map((patient) => (
+                <TableRow
+                  key={patient._id}
+                  className="cursor-pointer transition-colors hover:bg-secondary/50"
+                  onClick={() => handlePatientClick(patient)}
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                        {getInitials(patient.fullName)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">{patient.fullName}</p>
+                        <p className="truncate text-xs text-muted-foreground">{patient.phoneNumber}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-foreground">{patient.dni}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="text-sm text-foreground">
+                        {patient.lastAppointmentDate ? format(new Date(patient.lastAppointmentDate), "MMM d, yyyy") : "-"}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="text-sm text-foreground">
+                        {patient.nextAppointmentDate ? format(new Date(patient.nextAppointmentDate), "MMM d, yyyy") : "-"}
+                      </p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handlePatientClick(patient)
+                          }}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleSendMessage(patient)
+                          }}
+                        >
+                          {/* <Mail className="mr-2 h-4 w-4" /> */}
+                          <MessageSquareText className="mr-2 h-4 w-4" />
+                          Send Message
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                          }}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Schedule Appointment
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPatientToEdit(patient)
+                            setIsAddPatientOpen(true)
+                          }}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Patient
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPatientToDelete(patient)
+                          }}
+                        >
+                          Delete Patient
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              )))}
           </TableBody>
         </Table>
       </div>
 
       {/* Patient Detail Sheet */}
-      <PatientSheet patient={selectedPatient} open={!!selectedPatient} onClose={() => setSelectedPatient(null)} />
+      <PatientSheet
+        patient={selectedPatient}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        onSendMessage={() => selectedPatient && handleSendMessage(selectedPatient)}
+      />
+
+      <AddPatientDialog
+        open={isAddPatientOpen}
+        onOpenChange={(open) => {
+          setIsAddPatientOpen(open)
+          if (!open) setPatientToEdit(null)
+        }}
+        onSubmit={handleSavePatient}
+        initialData={patientToEdit}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!patientToDelete} onOpenChange={(open: boolean) => !open && setPatientToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>{patientToDelete?.fullName}</strong> from your directory.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePatient}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
