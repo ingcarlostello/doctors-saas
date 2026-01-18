@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { useProfileTwilioManagement } from "@/hooks/profile/useProfileTwilioManagement";
+import { useAction } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useState } from "react";
 
 export default function ProfilePage() {
   const {
@@ -35,6 +38,25 @@ export default function ProfilePage() {
     hasAnyAssigned,
     assignedSids,
   } = useProfileTwilioManagement({ hasSubaccount });
+
+  const listTemplates = useAction(api.twilio.listWhatsAppTemplates);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+
+  const handleListTemplates = async () => {
+    setIsLoadingTemplates(true);
+    setTemplatesError(null);
+    try {
+      const result = await listTemplates({});
+      setTemplates(result);
+    } catch (err: any) {
+      setTemplatesError(err.message || "Error al cargar templates");
+      console.error(err);
+    } finally {
+      setIsLoadingTemplates(false);
+    }
+  };
 
   return (
     <main className="p-8 flex flex-col gap-6 max-w-xl mx-auto">
@@ -274,6 +296,60 @@ export default function ProfilePage() {
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-lg font-medium">Templates de WhatsApp</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleListTemplates}
+            disabled={isLoadingTemplates}
+          >
+            {isLoadingTemplates ? "Cargando..." : "Ver templates"}
+          </Button>
+        </div>
+
+        {templatesError && (
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {templatesError}
+          </p>
+        )}
+
+        {templates.length > 0 && (
+          <div className="grid gap-3">
+            {templates.map((t) => (
+              <div
+                key={t.sid}
+                className="border rounded-md px-3 py-2 flex flex-col gap-1"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-sm">{t.friendlyName}</span>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                    {t.language}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground break-all">
+                  SID: {t.sid}
+                </div>
+                <div className="flex gap-2 text-xs">
+                  {Object.keys(t.types || {}).map((type) => (
+                    <span key={type} className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 px-1.5 py-0.5 rounded text-[10px]">
+                      {type.split('/').pop()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isLoadingTemplates && !templatesError && templates.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No hay templates cargados.
+          </p>
         )}
       </section>
     </main>

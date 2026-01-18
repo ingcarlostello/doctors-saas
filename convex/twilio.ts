@@ -235,3 +235,47 @@ export const listCurrentUserSubaccountNumbers = action({
     }));
   },
 });
+
+export const listWhatsAppTemplates = action({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Debes estar autenticado para listar los templates");
+    }
+
+    const accountSid = ENV.TWILIO_ACCOUNT_SID;
+    const authToken = ENV.TWILIO_AUTH_TOKEN;
+
+    if (!accountSid || !authToken) {
+      throw new Error(
+        "Las variables TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN no están configuradas",
+      );
+    }
+
+    const url = `https://content.twilio.com/v1/Content`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error al obtener templates de Twilio: ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    // Mapeamos para devolver un formato limpio
+    return (data.contents || []).map((t: any) => ({
+      sid: t.sid,
+      friendlyName: t.friendly_name,
+      language: t.language,
+      variables: t.variables,
+      types: t.types,
+    }));
+  },
+});
