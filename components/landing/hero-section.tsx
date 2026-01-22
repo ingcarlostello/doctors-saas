@@ -46,7 +46,7 @@ export function HeroSection() {
               <div className="h-3 w-3 rounded-full bg-destructive/60" />
               <div className="h-3 w-3 rounded-full bg-warning/60" />
               <div className="h-3 w-3 rounded-full bg-success/60" />
-              <span className="ml-2 text-xs text-muted-foreground">NexCare Dashboard</span>
+              <span className="ml-2 text-xs text-muted-foreground">Zenticare Dashboard</span>
             </div>
             <div className="aspect-[16/9] bg-muted/20 p-4 sm:p-8">
               <div className="grid h-full grid-cols-12 gap-4">
@@ -88,13 +88,12 @@ export function HeroSection() {
                           {Array.from({ length: 4 }).map((_, slot) => (
                             <div
                               key={slot}
-                              className={`h-8 w-full rounded ${
-                                Math.random() > 0.5
+                              className={`h-8 w-full rounded ${Math.random() > 0.5
                                   ? "bg-success/20"
                                   : Math.random() > 0.5
                                     ? "bg-warning/20"
                                     : "bg-muted"
-                              }`}
+                                }`}
                             />
                           ))}
                         </div>

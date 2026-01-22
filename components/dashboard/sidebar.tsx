@@ -1,8 +1,9 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Users, Megaphone, X, Activity, MessagesSquare } from "lucide-react"
+import { Calendar, Users, Megaphone, X, MessagesSquare, Settings, FileCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useQuery } from "convex/react"
@@ -12,7 +13,9 @@ const navigation = [
   { name: "Calendar", href: "/dashboard", icon: Calendar },
   { name: "Patients", href: "/patients", icon: Users },
   { name: "Recall Campaigns", href: "/campaigns", icon: Megaphone },
+  { name: "WhatsApp Templates", href: "/whatsapp-templates", icon: FileCheck },
   { name: "Chat", href: "/chat", icon: MessagesSquare },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 interface SidebarProps {
@@ -38,10 +41,16 @@ export function Sidebar({ onClose }: SidebarProps) {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Activity className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary overflow-hidden">
+            <Image
+              src="/Z-logo-TransparetICO.ico"
+              alt="Zenticare"
+              width={16}
+              height={16}
+              className="h-full w-full object-contain"
+            />
           </div>
-          <span className="text-lg font-semibold tracking-tight text-foreground">NexCare</span>
+          <span className="text-lg font-semibold tracking-tight text-foreground">Zenticare</span>
         </Link>
         <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose}>
           <X className="h-5 w-5" />
@@ -77,7 +86,7 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Footer */}
       <div className="border-t border-border p-4">
-        <p className="text-xs text-muted-foreground">© 2026 NexCare Medical</p>
+        <p className="text-xs text-muted-foreground">© 2026 Zenticare Medical</p>
       </div>
     </div>
   )

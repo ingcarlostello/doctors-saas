@@ -11,7 +11,7 @@ export function CTASection() {
             Ready to eliminate no-shows?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/80">
-            Join 500+ clinics already using NexCare to recover revenue and improve patient engagement.
+            Join 500+ clinics already using Zenticare to recover revenue and improve patient engagement.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button size="lg" variant="secondary" className="h-12 px-8" asChild>

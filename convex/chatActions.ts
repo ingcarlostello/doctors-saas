@@ -18,6 +18,8 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
   args: {
     conversationId: v.id("conversations"),
     content: v.optional(v.string()),
+    contentSid: v.optional(v.string()),
+    contentVariables: v.optional(v.string()),
     attachments: v.optional(
       v.array(
         v.object({
@@ -53,7 +55,11 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
     }
 
     const content = (args.content ?? "").trim();
-    if (content.length === 0 && (!args.attachments || args.attachments.length === 0)) {
+    if (
+      content.length === 0 &&
+      (!args.attachments || args.attachments.length === 0) &&
+      !args.contentSid
+    ) {
       throw new Error("Mensaje vacío");
     }
     if (content.length > CHAT_LIMITS.MAX_MESSAGE_CONTENT_LENGTH) {
@@ -106,7 +112,16 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
     const body = new URLSearchParams();
     body.set("From", from);
     body.set("To", to);
-    if (content.length > 0) body.set("Body", content);
+
+    if (args.contentSid) {
+      body.set("ContentSid", args.contentSid);
+      if (args.contentVariables) {
+        body.set("ContentVariables", args.contentVariables);
+      }
+    } else {
+      if (content.length > 0) body.set("Body", content);
+    }
+
     for (const attachment of attachments) {
       if (attachment.url) body.append("MediaUrl", attachment.url);
     }
