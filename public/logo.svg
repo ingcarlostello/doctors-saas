@@ -1,0 +1,11 @@
+<svg width="400" height="100" viewBox="0 0 400 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background Pill -->
+    <rect width="400" height="100" rx="50" fill="#2BC8B7"/>
+    
+    <!-- Z Icon Geometric Construction -->
+    <path d="M45 30H65C67.7614 30 70 32.2386 70 35V38C70 40.7614 67.7614 43 65 43H55L68 58H70C72.7614 58 75 60.2386 75 63V66C75 68.7614 72.7614 71 70 71H50C47.2386 71 45 68.7614 45 66V63C45 60.2386 47.2386 58 50 58H60L47 43H45C42.2386 43 40 40.7614 40 38V35C40 32.2386 42.2386 30 45 30Z" stroke="white" stroke-width="3" fill="none"/>
+    <path d="M48 48 L68 48" stroke="white" stroke-width="2"/>
+
+    <!-- Text -->
+    <text x="110" y="65" font-family="Arial, Helvetica, sans-serif" font-weight="100" font-size="50" fill="white" letter-spacing="1">zenticare</text>
+</svg>

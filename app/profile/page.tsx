@@ -49,6 +49,7 @@ export default function ProfilePage() {
     setTemplatesError(null);
     try {
       const result = await listTemplates({});
+      console.log("WhatsApp templates:", result);
       setTemplates(result);
     } catch (err: any) {
       setTemplatesError(err.message || "Error al cargar templates");

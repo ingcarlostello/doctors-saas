@@ -36,7 +36,7 @@ export function LandingFooter() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <span className="text-sm font-bold text-primary-foreground">N</span>
               </div>
-              <span className="text-xl font-semibold tracking-tight">NexCare</span>
+              <span className="text-xl font-semibold tracking-tight">Zenticare</span>
             </div>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
               The complete patient engagement platform for modern medical practices.
@@ -84,7 +84,7 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
-          <p className="text-sm text-muted-foreground">© 2026 NexCare. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">© 2026 Zenticare. All rights reserved.</p>
           <div className="flex items-center gap-4">
             {["HIPAA Compliant", "SOC2 Certified"].map((badge) => (
               <span key={badge} className="text-xs font-medium text-muted-foreground">

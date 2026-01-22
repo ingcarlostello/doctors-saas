@@ -27,7 +27,7 @@ export function LandingHeader() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <span className="text-sm font-bold text-primary-foreground">N</span>
           </div>
-          <span className="text-xl font-semibold tracking-tight">NexCare</span>
+          <span className="text-xl font-semibold tracking-tight">Zenticare</span>
         </div>
 
         <nav className="hidden items-center gap-8 md:flex">

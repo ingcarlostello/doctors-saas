@@ -38,7 +38,7 @@ export function BookingFlow() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
           <Activity className="h-5 w-5 text-primary-foreground" />
         </div>
-        <span className="text-xl font-semibold tracking-tight text-foreground">NexCare</span>
+        <span className="text-xl font-semibold tracking-tight text-foreground">Zenticare</span>
       </div>
 
       {/* Step Indicator */}

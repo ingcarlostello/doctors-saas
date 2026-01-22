@@ -100,7 +100,7 @@ export function PaymentVerification({ onBack }: PaymentVerificationProps) {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Venmo</span>
-              <span className="font-medium text-foreground">@NexCare-DrMitchell</span>
+              <span className="font-medium text-foreground">@Zenticare-DrMitchell</span>
             </div>
           </div>
         </div>

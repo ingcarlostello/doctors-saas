@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 export function TestimonialsSection() {
   const testimonials = [
     {
-      quote: "NexCare reduced our no-show rate from 28% to just 7%. The ROI was immediate and substantial.",
+      quote: "Zenticare reduced our no-show rate from 28% to just 7%. The ROI was immediate and substantial.",
       author: "Dr. Maria Santos",
       role: "Director, MediCare Clinic",
       avatar: "/professional-woman-doctor.png",

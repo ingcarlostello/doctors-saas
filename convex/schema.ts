@@ -119,4 +119,18 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_dni", ["userId", "dni"])
     .index("by_user_phone", ["userId", "phoneNumber"]),
+
+  templates: defineTable({
+    userId: v.id("users"),
+    name: v.string(), // friendly name
+    language: v.string(),
+    category: v.string(),
+    sid: v.string(), // Twilio Content SID
+    status: v.string(), // pending, approved, rejected
+    variables: v.optional(v.any()), // list of variables
+    types: v.optional(v.any()), // structure
+    body: v.string(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_sid", ["sid"]),
 });
