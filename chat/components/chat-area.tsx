@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { Video, Phone, MoreVertical, Smile, Paperclip, Mic, Send, ArrowLeft } from "lucide-react"
 import { MessageBubble, type Message } from "./message-bubble"
 import { cn } from "@/lib/utils"
+import { useChatInput } from "@/hooks/chat/useChatInput"
 
 interface Contact {
   id: string
@@ -40,8 +41,27 @@ export function ChatArea({
   const messagesViewportRef = useRef<HTMLDivElement>(null)
   const idleTimerRef = useRef<number | null>(null)
   const currentId = contact?.id
-  const inputValue = currentId ? drafts[currentId] ?? "" : ""
   const chatActive = Boolean(isChatActive)
+  const {
+    value: inputValue,
+    error: inputError,
+    handleChange,
+    reset,
+    submit,
+    setValue,
+    isSubmitting,
+  } = useChatInput({
+    required: true,
+    maxLength: 500,
+    onSubmit: async (content) => {
+      if (!currentId) return
+      onSendMessage(content)
+      setDrafts((prev) => {
+        const { [currentId]: _, ...rest } = prev
+        return rest
+      })
+    },
+  })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "instant" })
@@ -70,10 +90,19 @@ export function ChatArea({
     if (!currentId) onUserChattingChange?.(false)
   }, [currentId, onUserChattingChange])
 
+  useEffect(() => {
+    if (!currentId) {
+      setValue("")
+      return
+    }
+    setValue(drafts[currentId] ?? "")
+  }, [currentId, drafts, setValue])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!currentId) return
     bumpUserChatting()
     const value = e.target.value
+    handleChange(e)
     setDrafts((prev) => {
       if (value === "") {
         const { [currentId]: _, ...rest } = prev
@@ -83,15 +112,11 @@ export function ChatArea({
     })
   }
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!currentId) return
-    const content = inputValue.trim()
-    if (content) {
-      onSendMessage(content)
-      setDrafts((prev) => {
-        const { [currentId]: _, ...rest } = prev
-        return rest
-      })
+    const success = await submit()
+    if (success) {
+      reset()
     }
   }
 
@@ -99,7 +124,7 @@ export function ChatArea({
     bumpUserChatting()
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      handleSend()
+      void handleSend()
     }
   }
 
@@ -216,11 +241,11 @@ export function ChatArea({
             className="flex-1 px-4 py-2 bg-muted text-foreground placeholder:text-muted-foreground rounded-lg border-none outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
           />
           <button
-            onClick={handleSend}
-            disabled={!inputValue.trim()}
+            onClick={() => void handleSend()}
+            disabled={!inputValue.trim() || Boolean(inputError) || isSubmitting}
             className={cn(
               "px-4 py-2 rounded-lg font-medium transition-all",
-              inputValue.trim()
+              inputValue.trim() && !inputError && !isSubmitting
                 ? "bg-emerald-500 text-white hover:bg-emerald-600"
                 : "bg-muted text-muted-foreground cursor-not-allowed",
             )}
@@ -228,6 +253,9 @@ export function ChatArea({
             Send
           </button>
         </div>
+        {inputError && (
+          <div className="mt-2 text-xs text-destructive">{inputError}</div>
+        )}
       </div>
     </div>
   )
