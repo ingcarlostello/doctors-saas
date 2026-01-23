@@ -9,3 +9,15 @@ export type MainAccountNumber = {
     fax?: boolean;
   };
 };
+
+
+export type UiChat = {
+  id: string
+  name: string
+  avatar: string
+  lastMessage: string
+  timestamp: string
+  unreadCount: number
+  isOnline: boolean
+  messageStatus: "sent" | "delivered" | "read"
+}

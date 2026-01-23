@@ -1,29 +1,19 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { Video, Phone, MoreVertical, Smile, Paperclip, Mic, Send, ArrowLeft } from "lucide-react"
-import { MessageBubble, type Message } from "./message-bubble"
-import { cn } from "@/lib/utils"
-
-interface Contact {
-  id: string
-  name: string
-  avatar: string
-  isOnline: boolean
-}
-
-interface ChatAreaProps {
-  contact: Contact | null
-  messages: Message[]
-  onSendMessage: (content: string) => void
-  isTyping: boolean
-  onUserChattingChange?: (isChatting: boolean) => void
-  isChatActive?: boolean
-  onBack?: () => void
-  showBackButton?: boolean
-}
+import {
+  Video,
+  Phone,
+  MoreVertical,
+  Smile,
+  Paperclip,
+  Mic,
+  Send,
+  ArrowLeft,
+} from "lucide-react";
+import { MessageBubble } from "./message-bubble";
+import { cn } from "@/lib/utils";
+import { useChatArea } from "@/chat/hooks/useChatArea";
+import { ChatAreaProps } from "../types/chatArea";
 
 export function ChatArea({
   contact,
@@ -35,73 +25,25 @@ export function ChatArea({
   onBack,
   showBackButton,
 }: ChatAreaProps) {
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesViewportRef = useRef<HTMLDivElement>(null)
-  const idleTimerRef = useRef<number | null>(null)
-  const currentId = contact?.id
-  const inputValue = currentId ? drafts[currentId] ?? "" : ""
-  const chatActive = Boolean(isChatActive)
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "instant" })
-  }
-
-  const bumpUserChatting = () => {
-    onUserChattingChange?.(true)
-    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
-    idleTimerRef.current = window.setTimeout(() => {
-      onUserChattingChange?.(false)
-    }, 2500)
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  useEffect(() => {
-    return () => {
-      if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
-      onUserChattingChange?.(false)
-    }
-  }, [onUserChattingChange])
-
-  useEffect(() => {
-    if (!currentId) onUserChattingChange?.(false)
-  }, [currentId, onUserChattingChange])
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!currentId) return
-    bumpUserChatting()
-    const value = e.target.value
-    setDrafts((prev) => {
-      if (value === "") {
-        const { [currentId]: _, ...rest } = prev
-        return rest
-      }
-      return { ...prev, [currentId]: value }
-    })
-  }
-
-  const handleSend = () => {
-    if (!currentId) return
-    const content = inputValue.trim()
-    if (content) {
-      onSendMessage(content)
-      setDrafts((prev) => {
-        const { [currentId]: _, ...rest } = prev
-        return rest
-      })
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    bumpUserChatting()
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
+  const {
+    chatActive,
+    inputValue,
+    inputError,
+    isSubmitting,
+    messagesEndRef,
+    messagesViewportRef,
+    handleInputChange,
+    handleKeyDown,
+    handleSend,
+    handleInputFocus,
+    handleInputBlur,
+  } = useChatArea({
+    contactId: contact?.id,
+    messages,
+    onSendMessage,
+    onUserChattingChange,
+    isChatActive,
+  });
 
   if (!contact) {
     return (
@@ -110,10 +52,12 @@ export function ChatArea({
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             <Send className="w-8 h-8" />
           </div>
-          <p className="text-lg font-medium">Select a chat to start messaging</p>
+          <p className="text-lg font-medium">
+            Select a chat to start messaging
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -122,7 +66,10 @@ export function ChatArea({
       <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-card">
         <div className="flex items-center gap-3">
           {showBackButton && (
-            <button onClick={onBack} className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors">
+            <button
+              onClick={onBack}
+              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+            >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
           )}
@@ -160,7 +107,12 @@ export function ChatArea({
         className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-background to-muted/20"
       >
         {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} isChatActive={chatActive} viewportRef={messagesViewportRef} />
+          <MessageBubble
+            key={message.id}
+            message={message}
+            isChatActive={chatActive}
+            viewportRef={messagesViewportRef}
+          />
         ))}
 
         {/* Typing Indicator */}
@@ -208,19 +160,16 @@ export function ChatArea({
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={bumpUserChatting}
-            onBlur={() => {
-              if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
-              onUserChattingChange?.(false)
-            }}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             className="flex-1 px-4 py-2 bg-muted text-foreground placeholder:text-muted-foreground rounded-lg border-none outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
           />
           <button
-            onClick={handleSend}
-            disabled={!inputValue.trim()}
+            onClick={() => void handleSend()}
+            disabled={!inputValue.trim() || Boolean(inputError) || isSubmitting}
             className={cn(
               "px-4 py-2 rounded-lg font-medium transition-all",
-              inputValue.trim()
+              inputValue.trim() && !inputError && !isSubmitting
                 ? "bg-emerald-500 text-white hover:bg-emerald-600"
                 : "bg-muted text-muted-foreground cursor-not-allowed",
             )}
@@ -228,7 +177,10 @@ export function ChatArea({
             Send
           </button>
         </div>
+        {inputError && (
+          <div className="mt-2 text-xs text-destructive">{inputError}</div>
+        )}
       </div>
     </div>
-  )
+  );
 }
