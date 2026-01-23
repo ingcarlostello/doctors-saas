@@ -1,6 +1,6 @@
 import type { Doc, Id } from "@/convex/_generated/dataModel"
-import { Message } from "../components/message-bubble"
 import { mapMessageStatus } from "./messageStatus"
+import { Message } from "../types/messageBubble"
 
 export function messageToUiMessage(message: Doc<"messages">): Message {
   const ts = new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })

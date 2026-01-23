@@ -1,5 +1,5 @@
 import type { Doc, Id } from "@/convex/_generated/dataModel"
-import { Message } from "../components/message-bubble"
+import { Message } from "../types/messageBubble"
 
 export function mapMessageStatus(status: Doc<"messages">["status"]): Message["status"] {
   if (status === "delivered") return "delivered"

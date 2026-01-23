@@ -1,30 +1,19 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useRef, useEffect } from "react"
-import { Video, Phone, MoreVertical, Smile, Paperclip, Mic, Send, ArrowLeft } from "lucide-react"
-import { MessageBubble, type Message } from "./message-bubble"
-import { cn } from "@/lib/utils"
-import { useChatInput } from "@/hooks/chat/useChatInput"
-
-interface Contact {
-  id: string
-  name: string
-  avatar: string
-  isOnline: boolean
-}
-
-interface ChatAreaProps {
-  contact: Contact | null
-  messages: Message[]
-  onSendMessage: (content: string) => void
-  isTyping: boolean
-  onUserChattingChange?: (isChatting: boolean) => void
-  isChatActive?: boolean
-  onBack?: () => void
-  showBackButton?: boolean
-}
+import {
+  Video,
+  Phone,
+  MoreVertical,
+  Smile,
+  Paperclip,
+  Mic,
+  Send,
+  ArrowLeft,
+} from "lucide-react";
+import { MessageBubble } from "./message-bubble";
+import { cn } from "@/lib/utils";
+import { useChatArea } from "@/chat/hooks/useChatArea";
+import { ChatAreaProps } from "../types/chatArea";
 
 export function ChatArea({
   contact,
@@ -36,97 +25,25 @@ export function ChatArea({
   onBack,
   showBackButton,
 }: ChatAreaProps) {
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const messagesViewportRef = useRef<HTMLDivElement>(null)
-  const idleTimerRef = useRef<number | null>(null)
-  const currentId = contact?.id
-  const chatActive = Boolean(isChatActive)
   const {
-    value: inputValue,
-    error: inputError,
-    handleChange,
-    reset,
-    submit,
-    setValue,
+    chatActive,
+    inputValue,
+    inputError,
     isSubmitting,
-  } = useChatInput({
-    required: true,
-    maxLength: 500,
-    onSubmit: async (content) => {
-      if (!currentId) return
-      onSendMessage(content)
-      setDrafts((prev) => {
-        const { [currentId]: _, ...rest } = prev
-        return rest
-      })
-    },
-  })
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "instant" })
-  }
-
-  const bumpUserChatting = () => {
-    onUserChattingChange?.(true)
-    if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
-    idleTimerRef.current = window.setTimeout(() => {
-      onUserChattingChange?.(false)
-    }, 2500)
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  useEffect(() => {
-    return () => {
-      if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
-      onUserChattingChange?.(false)
-    }
-  }, [onUserChattingChange])
-
-  useEffect(() => {
-    if (!currentId) onUserChattingChange?.(false)
-  }, [currentId, onUserChattingChange])
-
-  useEffect(() => {
-    if (!currentId) {
-      setValue("")
-      return
-    }
-    setValue(drafts[currentId] ?? "")
-  }, [currentId, drafts, setValue])
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!currentId) return
-    bumpUserChatting()
-    const value = e.target.value
-    handleChange(e)
-    setDrafts((prev) => {
-      if (value === "") {
-        const { [currentId]: _, ...rest } = prev
-        return rest
-      }
-      return { ...prev, [currentId]: value }
-    })
-  }
-
-  const handleSend = async () => {
-    if (!currentId) return
-    const success = await submit()
-    if (success) {
-      reset()
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    bumpUserChatting()
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      void handleSend()
-    }
-  }
+    messagesEndRef,
+    messagesViewportRef,
+    handleInputChange,
+    handleKeyDown,
+    handleSend,
+    handleInputFocus,
+    handleInputBlur,
+  } = useChatArea({
+    contactId: contact?.id,
+    messages,
+    onSendMessage,
+    onUserChattingChange,
+    isChatActive,
+  });
 
   if (!contact) {
     return (
@@ -135,10 +52,12 @@ export function ChatArea({
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
             <Send className="w-8 h-8" />
           </div>
-          <p className="text-lg font-medium">Select a chat to start messaging</p>
+          <p className="text-lg font-medium">
+            Select a chat to start messaging
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -147,7 +66,10 @@ export function ChatArea({
       <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-card">
         <div className="flex items-center gap-3">
           {showBackButton && (
-            <button onClick={onBack} className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors">
+            <button
+              onClick={onBack}
+              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+            >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
           )}
@@ -185,7 +107,12 @@ export function ChatArea({
         className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-background to-muted/20"
       >
         {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} isChatActive={chatActive} viewportRef={messagesViewportRef} />
+          <MessageBubble
+            key={message.id}
+            message={message}
+            isChatActive={chatActive}
+            viewportRef={messagesViewportRef}
+          />
         ))}
 
         {/* Typing Indicator */}
@@ -233,11 +160,8 @@ export function ChatArea({
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={bumpUserChatting}
-            onBlur={() => {
-              if (idleTimerRef.current !== null) window.clearTimeout(idleTimerRef.current)
-              onUserChattingChange?.(false)
-            }}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
             className="flex-1 px-4 py-2 bg-muted text-foreground placeholder:text-muted-foreground rounded-lg border-none outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
           />
           <button
@@ -258,5 +182,5 @@ export function ChatArea({
         )}
       </div>
     </div>
-  )
+  );
 }

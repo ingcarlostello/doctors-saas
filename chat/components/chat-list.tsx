@@ -1,27 +1,8 @@
-"use client"
+"use client";
 
-import { Search, Plus, Check, CheckCheck } from "lucide-react"
-import { cn } from "@/lib/utils"
-
-interface Chat {
-  id: string
-  name: string
-  avatar: string
-  lastMessage: string
-  timestamp: string
-  unreadCount: number
-  isOnline: boolean
-  messageStatus: "sent" | "delivered" | "read"
-}
-
-interface ChatListProps {
-  chats: Chat[]
-  selectedChatId: string | null
-  onSelectChat: (id: string) => void
-  searchQuery: string
-  onSearchChange: (query: string) => void
-  onNewChat: () => void
-}
+import { Search, Plus, Check, CheckCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Chat, ChatListProps } from "../types/chatList";
 
 export function ChatList({
   chats,
@@ -31,13 +12,15 @@ export function ChatList({
   onSearchChange,
   onNewChat,
 }: ChatListProps) {
-  const filteredChats = chats.filter((chat) => chat.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredChats = chats.filter((chat) =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const getStatusIcon = (status: Chat["messageStatus"]) => {
-    if (status === "sent") return <Check className="w-3 h-3 text-muted-foreground" />
-    if (status === "delivered") return <CheckCheck className="w-3 h-3 text-muted-foreground" />
-    return <CheckCheck className="w-3 h-3 text-emerald-500" />
-  }
+    if (status === "sent") return <Check className="w-3 h-3 text-muted-foreground" />;
+    if (status === "delivered") return <CheckCheck className="w-3 h-3 text-muted-foreground" />;
+    return <CheckCheck className="w-3 h-3 text-emerald-500" />;
+  };
 
   return (
     <div className="flex flex-col h-full bg-card border-r border-border">
@@ -91,13 +74,19 @@ export function ChatList({
             {/* Content */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-foreground truncate">{chat.name}</span>
-                <span className="text-xs text-muted-foreground shrink-0">{chat.timestamp}</span>
+                <span className="font-semibold text-foreground truncate">
+                  {chat.name}
+                </span>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {chat.timestamp}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 min-w-0">
                   {getStatusIcon(chat.messageStatus)}
-                  <span className="text-sm text-muted-foreground truncate">{chat.lastMessage}</span>
+                  <span className="text-sm text-muted-foreground truncate">
+                    {chat.lastMessage}
+                  </span>
                 </div>
                 {chat.unreadCount > 0 && (
                   <span className="shrink-0 ml-2 px-2 py-0.5 text-xs font-medium text-white bg-emerald-500 rounded-full">
@@ -110,5 +99,5 @@ export function ChatList({
         ))}
       </div>
     </div>
-  )
+  );
 }
