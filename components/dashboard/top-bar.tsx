@@ -2,11 +2,11 @@
 
 import type React from "react";
 
-import { Search, Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Authenticated } from "convex/react";
 import { UserButton } from "@clerk/nextjs";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface TopBarProps {
   children?: React.ReactNode;
@@ -27,7 +27,8 @@ export function TopBar({ children }: TopBarProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <LanguageSwitcher />
         <Authenticated>
           <UserButton />
         </Authenticated>
@@ -35,3 +36,4 @@ export function TopBar({ children }: TopBarProps) {
     </header>
   );
 }
+

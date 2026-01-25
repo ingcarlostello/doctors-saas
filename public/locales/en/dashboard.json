@@ -1,0 +1,14 @@
+{
+    "sidebar": {
+        "closeSidebar": "Close sidebar"
+    },
+    "stats": {
+        "revenueRecovered": "Revenue Recovered",
+        "noShowsPrevented": "No-Shows Prevented",
+        "pendingRecalls": "Pending Recalls"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome back"
+    }
+}

@@ -1,40 +1,45 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Play } from "lucide-react"
+"use client";
+
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Play } from "lucide-react";
+import { useNamespace } from "@/components/TranslationProvider";
 
 export function HeroSection() {
+  const { t } = useNamespace("landing");
+  const { t: dashboardT } = useNamespace("dashboard");
+
   return (
     <section className="relative overflow-hidden px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-3xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm">
             <span className="h-2 w-2 rounded-full bg-success" />
-            <span className="text-muted-foreground">Now with WhatsApp Business API</span>
+            <span className="text-muted-foreground">{t.hero.badge}</span>
             <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
 
           <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            Eliminate No-Shows.
+            {t.hero.title}
             <br />
-            <span className="text-muted-foreground">Recover Revenue.</span>
+            <span className="text-muted-foreground">{t.hero.titleHighlight}</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg text-muted-foreground sm:text-xl">
-            The complete patient engagement platform that helps clinics reduce missed appointments by 73% and recover
-            thousands in lost revenue through intelligent automation.
+            {t.hero.description}
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button size="lg" className="h-12 px-8 text-base" asChild>
               <Link href="/demo">
-                Get a Demo
+                {t.hero.ctaPrimary}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button variant="outline" size="lg" className="h-12 px-8 text-base bg-transparent" asChild>
               <Link href="#how-it-works">
                 <Play className="mr-2 h-4 w-4" />
-                See How it Works
+                {t.hero.ctaSecondary}
               </Link>
             </Button>
           </div>
@@ -66,9 +71,9 @@ export function HeroSection() {
                 <div className="col-span-12 space-y-4 lg:col-span-9">
                   <div className="grid grid-cols-3 gap-4">
                     {[
-                      { label: "Revenue Recovered", value: "$12,450", color: "bg-success/10 border-success/20" },
-                      { label: "No-Shows Prevented", value: "47", color: "bg-primary/10 border-primary/20" },
-                      { label: "Pending Recalls", value: "23", color: "bg-warning/10 border-warning/20" },
+                      { label: dashboardT.stats.revenueRecovered, value: "$12,450", color: "bg-success/10 border-success/20" },
+                      { label: dashboardT.stats.noShowsPrevented, value: "47", color: "bg-primary/10 border-primary/20" },
+                      { label: dashboardT.stats.pendingRecalls, value: "23", color: "bg-warning/10 border-warning/20" },
                     ].map((stat) => (
                       <div key={stat.label} className={`rounded-lg border p-3 sm:p-4 ${stat.color}`}>
                         <div className="text-xs text-muted-foreground">{stat.label}</div>
@@ -85,17 +90,21 @@ export function HeroSection() {
                       {Array.from({ length: 7 }).map((_, day) => (
                         <div key={day} className="space-y-2">
                           <div className="h-3 w-full rounded bg-muted" />
-                          {Array.from({ length: 4 }).map((_, slot) => (
-                            <div
-                              key={slot}
-                              className={`h-8 w-full rounded ${Math.random() > 0.5
-                                  ? "bg-success/20"
-                                  : Math.random() > 0.5
-                                    ? "bg-warning/20"
-                                    : "bg-muted"
-                                }`}
-                            />
-                          ))}
+                          {Array.from({ length: 4 }).map((_, slot) => {
+                            // Deterministic pattern based on indices to avoid hydration mismatch
+                            const pattern = (day + slot) % 3;
+                            const colorClass = pattern === 0
+                              ? "bg-success/20"
+                              : pattern === 1
+                                ? "bg-warning/20"
+                                : "bg-muted";
+                            return (
+                              <div
+                                key={slot}
+                                className={`h-8 w-full rounded ${colorClass}`}
+                              />
+                            );
+                          })}
                         </div>
                       ))}
                     </div>

@@ -1,0 +1,124 @@
+{
+    "header": {
+        "features": "Fonctionnalités",
+        "howItWorks": "Comment ça Marche",
+        "pricing": "Tarifs",
+        "testimonials": "Témoignages"
+    },
+    "hero": {
+        "badge": "Maintenant avec l'API WhatsApp Business",
+        "title": "Éliminez les Absences.",
+        "titleHighlight": "Récupérez les Revenus.",
+        "description": "La plateforme complète d'engagement des patients qui aide les cliniques à réduire les rendez-vous manqués de 73% et à récupérer des milliers en revenus perdus grâce à l'automatisation intelligente.",
+        "ctaPrimary": "Obtenir une Démo",
+        "ctaSecondary": "Voir Comment ça Marche"
+    },
+    "features": {
+        "title": "Tout ce dont Vous Avez Besoin",
+        "subtitle": "Des fonctionnalités puissantes pour transformer votre communication avec les patients",
+        "items": [
+            {
+                "title": "Rappels Intelligents",
+                "description": "Les rappels automatiques de rendez-vous par SMS et WhatsApp réduisent les absences jusqu'à 73%"
+            },
+            {
+                "title": "Campagnes de Rappel",
+                "description": "Ramenez les patients inactifs avec des campagnes de sensibilisation personnalisées et ciblées"
+            },
+            {
+                "title": "Chat Bidirectionnel",
+                "description": "Conversations en temps réel avec les patients via leurs canaux préférés"
+            },
+            {
+                "title": "Tableau de Bord Analytique",
+                "description": "Suivez les métriques de performance et le ROI avec des rapports complets"
+            }
+        ]
+    },
+    "howItWorks": {
+        "title": "Comment ça Marche",
+        "subtitle": "Commencez en minutes, pas en mois",
+        "steps": [
+            {
+                "title": "Connectez Votre Calendrier",
+                "description": "Synchronisez avec Google Calendar ou votre système de gestion de cabinet"
+            },
+            {
+                "title": "Configurez les Automatisations",
+                "description": "Définissez les horaires de rappels et les règles des campagnes de rappel"
+            },
+            {
+                "title": "Engagez les Patients",
+                "description": "Regardez les patients confirmer les rendez-vous et répondre aux messages"
+            }
+        ]
+    },
+    "pricing": {
+        "title": "Tarification Simple et Transparente",
+        "subtitle": "Choisissez le plan qui convient à votre cabinet",
+        "plans": [
+            {
+                "name": "Débutant",
+                "price": "49€",
+                "description": "Parfait pour les petits cabinets",
+                "features": [
+                    "Jusqu'à 500 patients",
+                    "Rappels SMS",
+                    "Analyses de base",
+                    "Support par email"
+                ],
+                "cta": "Essai Gratuit"
+            },
+            {
+                "name": "Professionnel",
+                "price": "99€",
+                "description": "Pour les cabinets en croissance",
+                "features": [
+                    "Jusqu'à 2 000 patients",
+                    "WhatsApp + SMS",
+                    "Campagnes de rappel",
+                    "Support prioritaire"
+                ],
+                "cta": "Essai Gratuit"
+            },
+            {
+                "name": "Entreprise",
+                "price": "Sur Mesure",
+                "description": "Pour les grandes cliniques et groupes",
+                "features": [
+                    "Patients illimités",
+                    "Intégrations personnalisées",
+                    "Gestionnaire de compte dédié",
+                    "Garantie SLA"
+                ],
+                "cta": "Contacter les Ventes"
+            }
+        ]
+    },
+    "testimonials": {
+        "title": "Approuvé par les Cliniques du Monde Entier",
+        "subtitle": "Découvrez ce que disent nos clients",
+        "items": [
+            {
+                "quote": "Zenticare a réduit notre taux d'absence de 18% à seulement 5%. Le ROI était immédiat.",
+                "author": "Dr. Sarah Chen",
+                "role": "Propriétaire de Cabinet Familial"
+            },
+            {
+                "quote": "L'intégration WhatsApp est révolutionnaire. Nos patients l'adorent.",
+                "author": "Dr. Michael Rodriguez",
+                "role": "Directeur de Clinique Dentaire"
+            },
+            {
+                "quote": "Nous avons récupéré plus de 15 000€ le premier mois rien qu'avec les campagnes de rappel.",
+                "author": "Dr. Emily Watson",
+                "role": "Cabinet de Dermatologie"
+            }
+        ]
+    },
+    "cta": {
+        "title": "Prêt à Réduire les Absences?",
+        "description": "Rejoignez des milliers de professionnels de santé qui font confiance à Zenticare",
+        "button": "Commencer Gratuitement"
+    }
+}

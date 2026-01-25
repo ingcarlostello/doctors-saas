@@ -1,0 +1,14 @@
+{
+    "sidebar": {
+        "closeSidebar": "Fermer la barre latérale"
+    },
+    "stats": {
+        "revenueRecovered": "Revenus Récupérés",
+        "noShowsPrevented": "Absences Évitées",
+        "pendingRecalls": "Rappels en Attente"
+    },
+    "dashboard": {
+        "title": "Tableau de Bord",
+        "welcome": "Bon retour"
+    }
+}

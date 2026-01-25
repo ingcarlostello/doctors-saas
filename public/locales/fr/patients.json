@@ -1,0 +1,27 @@
+{
+    "title": "Patients",
+    "addPatient": "Ajouter un Patient",
+    "searchPlaceholder": "Rechercher des patients...",
+    "columns": {
+        "name": "Nom",
+        "email": "E-mail",
+        "phone": "Téléphone",
+        "lastVisit": "Dernière Visite",
+        "nextAppointment": "Prochain Rendez-vous",
+        "status": "Statut",
+        "actions": "Actions"
+    },
+    "status": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "pending": "En Attente"
+    },
+    "form": {
+        "firstName": "Prénom",
+        "lastName": "Nom",
+        "email": "E-mail",
+        "phone": "Téléphone",
+        "dateOfBirth": "Date de Naissance",
+        "notes": "Notes"
+    }
+}

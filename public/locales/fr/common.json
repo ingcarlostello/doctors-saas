@@ -1,0 +1,40 @@
+{
+    "navigation": {
+        "dashboard": "Tableau de Bord",
+        "calendar": "Calendrier",
+        "patients": "Patients",
+        "campaigns": "Campagnes de Rappel",
+        "whatsappTemplates": "Modèles WhatsApp",
+        "chat": "Chat",
+        "settings": "Paramètres",
+        "login": "Connexion",
+        "signUp": "S'inscrire",
+        "getStarted": "Commencer",
+        "logout": "Déconnexion"
+    },
+    "common": {
+        "loading": "Chargement...",
+        "error": "Une erreur s'est produite",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "delete": "Supprimer",
+        "edit": "Modifier",
+        "add": "Ajouter",
+        "search": "Rechercher",
+        "filter": "Filtrer",
+        "actions": "Actions",
+        "confirm": "Confirmer",
+        "yes": "Oui",
+        "no": "Non",
+        "close": "Fermer",
+        "back": "Retour",
+        "next": "Suivant",
+        "previous": "Précédent",
+        "submit": "Soumettre"
+    },
+    "footer": {
+        "copyright": "© 2026 Zenticare Medical",
+        "privacyPolicy": "Politique de Confidentialité",
+        "termsOfService": "Conditions d'Utilisation"
+    }
+}

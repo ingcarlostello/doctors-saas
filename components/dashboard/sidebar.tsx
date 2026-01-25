@@ -8,16 +8,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
-  { name: "Patients", href: "/patients", icon: Users },
-  { name: "Recall Campaigns", href: "/campaigns", icon: Megaphone },
-  { name: "WhatsApp Templates", href: "/whatsapp-templates", icon: FileCheck },
-  { name: "Chat", href: "/chat", icon: MessagesSquare },
-  { name: "Settings", href: "/settings", icon: Settings },
-]
+import { useNamespace } from "@/components/TranslationProvider"
+import { getLocaleFromPath } from "@/lib/i18n"
 
 interface SidebarProps {
   onClose?: () => void
@@ -34,14 +26,28 @@ function UnreadNotificationDot() {
 
 export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
+  const locale = getLocaleFromPath(pathname)
   const conversations = useQuery(api.chat.listConversations, {})
   const hasUnreadMessages = (conversations ?? []).some((c) => (c.unreadCount ?? 0) > 0)
+
+  const { t: commonT } = useNamespace("common")
+  const { t: dashboardT } = useNamespace("dashboard")
+
+  const navigation = [
+    { name: commonT.navigation.dashboard, href: `/${locale}/dashboard`, icon: LayoutDashboard },
+    { name: commonT.navigation.calendar, href: `/${locale}/calendar`, icon: Calendar },
+    { name: commonT.navigation.patients, href: `/${locale}/patients`, icon: Users },
+    { name: commonT.navigation.campaigns, href: `/${locale}/campaigns`, icon: Megaphone },
+    { name: commonT.navigation.whatsappTemplates, href: `/${locale}/whatsapp-templates`, icon: FileCheck },
+    { name: commonT.navigation.chat, href: `/${locale}/chat`, icon: MessagesSquare },
+    { name: commonT.navigation.settings, href: `/${locale}/settings`, icon: Settings },
+  ]
 
   return (
     <div className="flex h-full flex-col border-r border-border bg-card">
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={`/${locale}`} className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary overflow-hidden">
             <Image
               src="/Z-logo-TransparetICO.ico"
@@ -55,15 +61,15 @@ export function Sidebar({ onClose }: SidebarProps) {
         </Link>
         <Button variant="ghost" size="icon" className="lg:hidden" onClick={onClose}>
           <X className="h-5 w-5" />
-          <span className="sr-only">Close sidebar</span>
+          <span className="sr-only">{dashboardT.sidebar.closeSidebar}</span>
         </Button>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
-          const isActive = pathname === item.href
-          const showUnreadDot = item.href === "/chat" && hasUnreadMessages && !isActive
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          const showUnreadDot = item.href.endsWith("/chat") && hasUnreadMessages && !isActive
           return (
             <Link
               key={item.name}
@@ -87,7 +93,7 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Footer */}
       <div className="border-t border-border p-4">
-        <p className="text-xs text-muted-foreground">© 2026 Zenticare Medical</p>
+        <p className="text-xs text-muted-foreground">{commonT.footer.copyright}</p>
       </div>
     </div>
   )
