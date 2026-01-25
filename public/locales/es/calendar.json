@@ -1,0 +1,10 @@
+{
+    "title": "Calendario",
+    "today": "Hoy",
+    "month": "Mes",
+    "week": "Semana",
+    "day": "Día",
+    "agenda": "Agenda",
+    "noEvents": "Sin eventos",
+    "addEvent": "Agregar Evento"
+}

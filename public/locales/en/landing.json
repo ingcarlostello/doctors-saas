@@ -1,0 +1,124 @@
+{
+    "header": {
+        "features": "Features",
+        "howItWorks": "How it Works",
+        "pricing": "Pricing",
+        "testimonials": "Testimonials"
+    },
+    "hero": {
+        "badge": "Now with WhatsApp Business API",
+        "title": "Eliminate No-Shows.",
+        "titleHighlight": "Recover Revenue.",
+        "description": "The complete patient engagement platform that helps clinics reduce missed appointments by 73% and recover thousands in lost revenue through intelligent automation.",
+        "ctaPrimary": "Get a Demo",
+        "ctaSecondary": "See How it Works"
+    },
+    "features": {
+        "title": "Everything You Need",
+        "subtitle": "Powerful features to transform your patient communication",
+        "items": [
+            {
+                "title": "Smart Reminders",
+                "description": "Automated appointment reminders via SMS and WhatsApp reduce no-shows by up to 73%"
+            },
+            {
+                "title": "Recall Campaigns",
+                "description": "Bring back inactive patients with targeted, personalized outreach campaigns"
+            },
+            {
+                "title": "Two-Way Chat",
+                "description": "Real-time conversations with patients through their preferred channels"
+            },
+            {
+                "title": "Analytics Dashboard",
+                "description": "Track performance metrics and ROI with comprehensive reporting"
+            }
+        ]
+    },
+    "howItWorks": {
+        "title": "How It Works",
+        "subtitle": "Get started in minutes, not months",
+        "steps": [
+            {
+                "title": "Connect Your Calendar",
+                "description": "Sync with Google Calendar or your practice management system"
+            },
+            {
+                "title": "Configure Automations",
+                "description": "Set up reminder schedules and recall campaign rules"
+            },
+            {
+                "title": "Engage Patients",
+                "description": "Watch as patients confirm appointments and respond to outreach"
+            }
+        ]
+    },
+    "pricing": {
+        "title": "Simple, Transparent Pricing",
+        "subtitle": "Choose the plan that fits your practice",
+        "plans": [
+            {
+                "name": "Starter",
+                "price": "$49",
+                "description": "Perfect for small practices",
+                "features": [
+                    "Up to 500 patients",
+                    "SMS reminders",
+                    "Basic analytics",
+                    "Email support"
+                ],
+                "cta": "Start Free Trial"
+            },
+            {
+                "name": "Professional",
+                "price": "$99",
+                "description": "For growing practices",
+                "features": [
+                    "Up to 2,000 patients",
+                    "WhatsApp + SMS",
+                    "Recall campaigns",
+                    "Priority support"
+                ],
+                "cta": "Start Free Trial"
+            },
+            {
+                "name": "Enterprise",
+                "price": "Custom",
+                "description": "For large clinics & groups",
+                "features": [
+                    "Unlimited patients",
+                    "Custom integrations",
+                    "Dedicated account manager",
+                    "SLA guarantee"
+                ],
+                "cta": "Contact Sales"
+            }
+        ]
+    },
+    "testimonials": {
+        "title": "Trusted by Clinics Worldwide",
+        "subtitle": "See what our customers have to say",
+        "items": [
+            {
+                "quote": "Zenticare reduced our no-show rate from 18% to just 5%. The ROI was immediate.",
+                "author": "Dr. Sarah Chen",
+                "role": "Family Practice Owner"
+            },
+            {
+                "quote": "The WhatsApp integration is a game-changer. Our patients love it.",
+                "author": "Dr. Michael Rodriguez",
+                "role": "Dental Clinic Director"
+            },
+            {
+                "quote": "We recovered over $15,000 in the first month just from recall campaigns.",
+                "author": "Dr. Emily Watson",
+                "role": "Dermatology Practice"
+            }
+        ]
+    },
+    "cta": {
+        "title": "Ready to Reduce No-Shows?",
+        "description": "Join thousands of healthcare providers who trust Zenticare",
+        "button": "Get Started Free"
+    }
+}

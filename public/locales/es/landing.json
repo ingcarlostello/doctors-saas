@@ -1,0 +1,124 @@
+{
+    "header": {
+        "features": "Características",
+        "howItWorks": "Cómo Funciona",
+        "pricing": "Precios",
+        "testimonials": "Testimonios"
+    },
+    "hero": {
+        "badge": "Ahora con WhatsApp Business API",
+        "title": "Elimina las Inasistencias.",
+        "titleHighlight": "Recupera Ingresos.",
+        "description": "La plataforma completa de interacción con pacientes que ayuda a las clínicas a reducir las citas perdidas en un 73% y recuperar miles en ingresos perdidos mediante automatización inteligente.",
+        "ctaPrimary": "Obtener Demo",
+        "ctaSecondary": "Ver Cómo Funciona"
+    },
+    "features": {
+        "title": "Todo lo que Necesitas",
+        "subtitle": "Funciones poderosas para transformar la comunicación con tus pacientes",
+        "items": [
+            {
+                "title": "Recordatorios Inteligentes",
+                "description": "Recordatorios automáticos de citas vía SMS y WhatsApp reducen las inasistencias hasta en un 73%"
+            },
+            {
+                "title": "Campañas de Recall",
+                "description": "Recupera pacientes inactivos con campañas de alcance personalizadas y dirigidas"
+            },
+            {
+                "title": "Chat Bidireccional",
+                "description": "Conversaciones en tiempo real con pacientes a través de sus canales preferidos"
+            },
+            {
+                "title": "Panel de Análisis",
+                "description": "Rastrea métricas de rendimiento y ROI con reportes completos"
+            }
+        ]
+    },
+    "howItWorks": {
+        "title": "Cómo Funciona",
+        "subtitle": "Comienza en minutos, no en meses",
+        "steps": [
+            {
+                "title": "Conecta tu Calendario",
+                "description": "Sincroniza con Google Calendar o tu sistema de gestión de práctica"
+            },
+            {
+                "title": "Configura Automatizaciones",
+                "description": "Establece horarios de recordatorios y reglas de campañas de recall"
+            },
+            {
+                "title": "Interactúa con Pacientes",
+                "description": "Observa cómo los pacientes confirman citas y responden a los mensajes"
+            }
+        ]
+    },
+    "pricing": {
+        "title": "Precios Simples y Transparentes",
+        "subtitle": "Elige el plan que se adapte a tu práctica",
+        "plans": [
+            {
+                "name": "Inicial",
+                "price": "$49",
+                "description": "Perfecto para prácticas pequeñas",
+                "features": [
+                    "Hasta 500 pacientes",
+                    "Recordatorios SMS",
+                    "Análisis básico",
+                    "Soporte por email"
+                ],
+                "cta": "Iniciar Prueba Gratis"
+            },
+            {
+                "name": "Profesional",
+                "price": "$99",
+                "description": "Para prácticas en crecimiento",
+                "features": [
+                    "Hasta 2,000 pacientes",
+                    "WhatsApp + SMS",
+                    "Campañas de recall",
+                    "Soporte prioritario"
+                ],
+                "cta": "Iniciar Prueba Gratis"
+            },
+            {
+                "name": "Empresarial",
+                "price": "Personalizado",
+                "description": "Para clínicas grandes y grupos",
+                "features": [
+                    "Pacientes ilimitados",
+                    "Integraciones personalizadas",
+                    "Gerente de cuenta dedicado",
+                    "Garantía SLA"
+                ],
+                "cta": "Contactar Ventas"
+            }
+        ]
+    },
+    "testimonials": {
+        "title": "Confiado por Clínicas en Todo el Mundo",
+        "subtitle": "Mira lo que dicen nuestros clientes",
+        "items": [
+            {
+                "quote": "Zenticare redujo nuestra tasa de inasistencia del 18% a solo 5%. El ROI fue inmediato.",
+                "author": "Dra. Sarah Chen",
+                "role": "Propietaria de Práctica Familiar"
+            },
+            {
+                "quote": "La integración con WhatsApp es revolucionaria. A nuestros pacientes les encanta.",
+                "author": "Dr. Michael Rodriguez",
+                "role": "Director de Clínica Dental"
+            },
+            {
+                "quote": "Recuperamos más de $15,000 en el primer mes solo con campañas de recall.",
+                "author": "Dra. Emily Watson",
+                "role": "Práctica de Dermatología"
+            }
+        ]
+    },
+    "cta": {
+        "title": "¿Listo para Reducir las Inasistencias?",
+        "description": "Únete a miles de proveedores de salud que confían en Zenticare",
+        "button": "Comenzar Gratis"
+    }
+}

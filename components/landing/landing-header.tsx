@@ -2,15 +2,24 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { useNamespace } from "@/components/TranslationProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { getLocaleFromPath } from "@/lib/i18n";
 
 export function LandingHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
+  const locale = getLocaleFromPath(pathname);
+
+  const { t: commonT } = useNamespace("common");
+  const { t: landingT } = useNamespace("landing");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,35 +44,30 @@ export function LandingHeader() {
             href="#features"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Features
+            {landingT.header.features}
           </Link>
           <Link
             href="#how-it-works"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            How it Works
+            {landingT.header.howItWorks}
           </Link>
           <Link
             href="#pricing"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Pricing
+            {landingT.header.pricing}
           </Link>
           <Link
             href="#testimonials"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Testimonials
+            {landingT.header.testimonials}
           </Link>
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          {/* <Button variant="ghost" size="sm" asChild>
-            <Link href="/login">Log in</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/demo">Get a Demo 1</Link>
-          </Button> */}
+          <LanguageSwitcher />
           <Unauthenticated>
             <SignInButton mode="modal">
               <Button
@@ -73,7 +77,7 @@ export function LandingHeader() {
                 className={cn(isScrolled && "lg:hidden")}
               >
                 <Link href="#">
-                  <span>Login</span>
+                  <span>{commonT.navigation.login}</span>
                 </Link>
               </Button>
             </SignInButton>
@@ -85,7 +89,7 @@ export function LandingHeader() {
                 className={cn(isScrolled && "lg:hidden")}
               >
                 <Link href="#">
-                  <span>Sign Up</span>
+                  <span>{commonT.navigation.signUp}</span>
                 </Link>
               </Button>
             </SignUpButton>
@@ -97,15 +101,15 @@ export function LandingHeader() {
                 className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
               >
                 <Link href="#">
-                  <span>Get Started</span>
+                  <span>{commonT.navigation.getStarted}</span>
                 </Link>
               </Button>
             </SignUpButton>
           </Unauthenticated>
           <Authenticated>
             <Button>
-              <Link href="/dashboard">
-                <span>Dashboard</span>
+              <Link href={`/${locale}/dashboard`}>
+                <span>{commonT.navigation.dashboard}</span>
               </Link>
             </Button>
             <UserButton />
@@ -131,32 +135,33 @@ export function LandingHeader() {
               href="#features"
               className="text-sm font-medium text-muted-foreground"
             >
-              Features
+              {landingT.header.features}
             </Link>
             <Link
               href="#how-it-works"
               className="text-sm font-medium text-muted-foreground"
             >
-              How it Works
+              {landingT.header.howItWorks}
             </Link>
             <Link
               href="#pricing"
               className="text-sm font-medium text-muted-foreground"
             >
-              Pricing
+              {landingT.header.pricing}
             </Link>
             <Link
               href="#testimonials"
               className="text-sm font-medium text-muted-foreground"
             >
-              Testimonials
+              {landingT.header.testimonials}
             </Link>
             <div className="flex flex-col gap-2 pt-4 border-t border-border">
+              <LanguageSwitcher />
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Log in</Link>
+                <Link href="#">{commonT.navigation.login}</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link href="/demo">Get a Demo 2</Link>
+                <Link href="#">{landingT.hero.ctaPrimary}</Link>
               </Button>
             </div>
           </nav>

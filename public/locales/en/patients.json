@@ -1,0 +1,27 @@
+{
+    "title": "Patients",
+    "addPatient": "Add Patient",
+    "searchPlaceholder": "Search patients...",
+    "columns": {
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "lastVisit": "Last Visit",
+        "nextAppointment": "Next Appointment",
+        "status": "Status",
+        "actions": "Actions"
+    },
+    "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "pending": "Pending"
+    },
+    "form": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "phone": "Phone",
+        "dateOfBirth": "Date of Birth",
+        "notes": "Notes"
+    }
+}

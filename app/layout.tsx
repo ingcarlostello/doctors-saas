@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ConvexClientProvider from "@/components/ConvexClientProvider";
-import { ClerkProvider } from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,31 +20,11 @@ export const metadata: Metadata = {
   },
 };
 
-import { Toaster } from "@/components/ui/sonner";
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <head>
-        <link
-          rel="preload"
-          href="/notificationChat.MP3"
-          as="audio"
-          type="audio/mpeg"
-        />
-      </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ClerkProvider dynamic>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
-          <Toaster />
-        </ClerkProvider>
-      </body>
-    </html>
-  );
+  // Root layout passes through to [lang]/layout.tsx which provides html/body
+  return children;
 }

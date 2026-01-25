@@ -1,0 +1,14 @@
+{
+    "sidebar": {
+        "closeSidebar": "Fechar barra lateral"
+    },
+    "stats": {
+        "revenueRecovered": "Receita Recuperada",
+        "noShowsPrevented": "Faltas Prevenidas",
+        "pendingRecalls": "Recalls Pendentes"
+    },
+    "dashboard": {
+        "title": "Painel",
+        "welcome": "Bem-vindo de volta"
+    }
+}

@@ -1,0 +1,124 @@
+{
+    "header": {
+        "features": "Recursos",
+        "howItWorks": "Como Funciona",
+        "pricing": "Preços",
+        "testimonials": "Depoimentos"
+    },
+    "hero": {
+        "badge": "Agora com WhatsApp Business API",
+        "title": "Elimine as Faltas.",
+        "titleHighlight": "Recupere Receita.",
+        "description": "A plataforma completa de engajamento de pacientes que ajuda clínicas a reduzir consultas perdidas em 73% e recuperar milhares em receita perdida através de automação inteligente.",
+        "ctaPrimary": "Obter Demo",
+        "ctaSecondary": "Veja Como Funciona"
+    },
+    "features": {
+        "title": "Tudo o que Você Precisa",
+        "subtitle": "Recursos poderosos para transformar a comunicação com seus pacientes",
+        "items": [
+            {
+                "title": "Lembretes Inteligentes",
+                "description": "Lembretes automáticos de consultas via SMS e WhatsApp reduzem faltas em até 73%"
+            },
+            {
+                "title": "Campanhas de Recall",
+                "description": "Traga de volta pacientes inativos com campanhas de alcance personalizadas e direcionadas"
+            },
+            {
+                "title": "Chat Bidirecional",
+                "description": "Conversas em tempo real com pacientes através de seus canais preferidos"
+            },
+            {
+                "title": "Painel de Análises",
+                "description": "Acompanhe métricas de desempenho e ROI com relatórios completos"
+            }
+        ]
+    },
+    "howItWorks": {
+        "title": "Como Funciona",
+        "subtitle": "Comece em minutos, não em meses",
+        "steps": [
+            {
+                "title": "Conecte seu Calendário",
+                "description": "Sincronize com Google Calendar ou seu sistema de gestão de clínica"
+            },
+            {
+                "title": "Configure Automações",
+                "description": "Defina horários de lembretes e regras de campanhas de recall"
+            },
+            {
+                "title": "Engaje Pacientes",
+                "description": "Veja os pacientes confirmarem consultas e responderem às mensagens"
+            }
+        ]
+    },
+    "pricing": {
+        "title": "Preços Simples e Transparentes",
+        "subtitle": "Escolha o plano que se adapta à sua clínica",
+        "plans": [
+            {
+                "name": "Inicial",
+                "price": "$49",
+                "description": "Perfeito para clínicas pequenas",
+                "features": [
+                    "Até 500 pacientes",
+                    "Lembretes SMS",
+                    "Análises básicas",
+                    "Suporte por email"
+                ],
+                "cta": "Iniciar Teste Grátis"
+            },
+            {
+                "name": "Profissional",
+                "price": "$99",
+                "description": "Para clínicas em crescimento",
+                "features": [
+                    "Até 2.000 pacientes",
+                    "WhatsApp + SMS",
+                    "Campanhas de recall",
+                    "Suporte prioritário"
+                ],
+                "cta": "Iniciar Teste Grátis"
+            },
+            {
+                "name": "Empresarial",
+                "price": "Personalizado",
+                "description": "Para clínicas grandes e grupos",
+                "features": [
+                    "Pacientes ilimitados",
+                    "Integrações personalizadas",
+                    "Gerente de conta dedicado",
+                    "Garantia SLA"
+                ],
+                "cta": "Contatar Vendas"
+            }
+        ]
+    },
+    "testimonials": {
+        "title": "Confiado por Clínicas em Todo o Mundo",
+        "subtitle": "Veja o que nossos clientes dizem",
+        "items": [
+            {
+                "quote": "Zenticare reduziu nossa taxa de faltas de 18% para apenas 5%. O ROI foi imediato.",
+                "author": "Dra. Sarah Chen",
+                "role": "Proprietária de Clínica Familiar"
+            },
+            {
+                "quote": "A integração com WhatsApp é revolucionária. Nossos pacientes adoram.",
+                "author": "Dr. Michael Rodriguez",
+                "role": "Diretor de Clínica Odontológica"
+            },
+            {
+                "quote": "Recuperamos mais de $15.000 no primeiro mês apenas com campanhas de recall.",
+                "author": "Dra. Emily Watson",
+                "role": "Clínica de Dermatologia"
+            }
+        ]
+    },
+    "cta": {
+        "title": "Pronto para Reduzir as Faltas?",
+        "description": "Junte-se a milhares de profissionais de saúde que confiam na Zenticare",
+        "button": "Começar Grátis"
+    }
+}

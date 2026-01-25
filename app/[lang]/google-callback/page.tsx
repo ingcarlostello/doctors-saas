@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import type { Locale } from "@/lib/i18n";
 
 export default function GoogleCallbackPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const params = useParams();
+    const lang = (params.lang as Locale) || "en";
     const exchangeCode = useAction(api.google_calendar.exchangeCode);
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
@@ -33,8 +36,8 @@ export default function GoogleCallbackPage() {
                 await exchangeCode({ code });
                 setStatus("success");
                 toast.success("Calendario conectado exitosamente");
-                // Redirect to calendar or settings
-                router.push("/calendar");
+                // Redirect to calendar with locale
+                router.push(`/${lang}/calendar`);
             } catch (err) {
                 console.error("Exchange Error:", err);
                 setStatus("error");
@@ -43,7 +46,7 @@ export default function GoogleCallbackPage() {
         };
 
         handleExchange();
-    }, [searchParams, exchangeCode, router]);
+    }, [searchParams, exchangeCode, router, lang]);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background">
@@ -67,7 +70,7 @@ export default function GoogleCallbackPage() {
                         <h2 className="text-2xl font-bold text-red-600">Error</h2>
                         <p className="text-muted-foreground">No se pudo conectar el calendario.</p>
                         <button
-                            onClick={() => router.push("/")}
+                            onClick={() => router.push(`/${lang}`)}
                             className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
                         >
                             Volver al inicio
