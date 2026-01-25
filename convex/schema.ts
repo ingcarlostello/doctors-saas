@@ -133,4 +133,20 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_sid", ["sid"]),
+
+  google_calendar_tokens: defineTable({
+    userId: v.id("users"),
+    // Access Token
+    accessTokenCiphertext: v.string(),
+    accessTokenIv: v.string(),
+    // Refresh Token (Critical to encrypt)
+    refreshTokenCiphertext: v.string(),
+    refreshTokenIv: v.string(),
+
+    expiresAt: v.number(),
+    tokenType: v.string(),
+    scope: v.string(),
+    email: v.optional(v.string()), // Associated Google email
+    calendarId: v.optional(v.string()),
+  }).index("by_user", ["userId"]),
 });

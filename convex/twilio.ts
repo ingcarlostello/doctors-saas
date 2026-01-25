@@ -334,6 +334,17 @@ export const listWhatsAppTemplates = action({
       throw new Error("Debes estar autenticado para listar los templates");
     }
 
+    // Check if user has subaccount configured
+    const currentUser = await ctx.runQuery(api.users.currentUser, {});
+    if (
+      !currentUser ||
+      !currentUser.twilioSubaccountSid ||
+      !currentUser.twilioSubaccountAuthTokenCiphertext
+    ) {
+      console.log("Twilio not configured for user, returning empty templates list.");
+      return [];
+    }
+
     // Usar credenciales de la subcuenta del usuario
     const authHeader = await getSubaccountAuthHeader(ctx);
 
