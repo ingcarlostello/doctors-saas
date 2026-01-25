@@ -3,14 +3,15 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Users, Megaphone, X, MessagesSquare, Settings, FileCheck } from "lucide-react"
+import { Calendar, Users, Megaphone, X, MessagesSquare, Settings, FileCheck, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 
 const navigation = [
-  { name: "Calendar", href: "/dashboard", icon: Calendar },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Patients", href: "/patients", icon: Users },
   { name: "Recall Campaigns", href: "/campaigns", icon: Megaphone },
   { name: "WhatsApp Templates", href: "/whatsapp-templates", icon: FileCheck },

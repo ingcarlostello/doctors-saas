@@ -10,9 +10,10 @@ import { TemplateForm } from "@/components/whatsapp/TemplateForm";
 interface AddTemplateDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    onSuccess?: () => void;
 }
 
-export function AddTemplateDialog({ open, onOpenChange }: AddTemplateDialogProps) {
+export function AddTemplateDialog({ open, onOpenChange, onSuccess }: AddTemplateDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[80vw] lg:max-w-[50vw] max-w-7xl w-full max-h-[90vh] overflow-y-auto">
@@ -36,7 +37,12 @@ export function AddTemplateDialog({ open, onOpenChange }: AddTemplateDialogProps
                     </ul>
                 </div>
 
-                <TemplateForm onSuccess={() => onOpenChange(false)} />
+                <TemplateForm
+                    onSuccess={() => {
+                        onOpenChange(false);
+                        onSuccess?.();
+                    }}
+                />
             </DialogContent>
         </Dialog>
     );

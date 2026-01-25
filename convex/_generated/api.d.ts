@@ -13,6 +13,7 @@ import type * as chatActions from "../chatActions.js";
 import type * as chatConfig from "../chatConfig.js";
 import type * as chatInternal from "../chatInternal.js";
 import type * as chatUtils from "../chatUtils.js";
+import type * as google_calendar from "../google_calendar.js";
 import type * as http from "../http.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as patients from "../patients.js";
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   chatConfig: typeof chatConfig;
   chatInternal: typeof chatInternal;
   chatUtils: typeof chatUtils;
+  google_calendar: typeof google_calendar;
   http: typeof http;
   myFunctions: typeof myFunctions;
   patients: typeof patients;
