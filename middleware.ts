@@ -3,11 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { i18nConfig, isValidLocale, type Locale } from "@/lib/i18n/config";
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/:lang",
-  "/:lang/",
-]);
+const isPublicRoute = createRouteMatcher(["/", "/:lang", "/:lang/"]);
 
 // Routes that should not be localized
 const isIgnoredRoute = (pathname: string) => {
@@ -75,7 +71,11 @@ export default clerkMiddleware(async (auth, req) => {
   // If no locale in pathname, redirect to localized version
   if (!pathnameLocale) {
     const locale = getLocaleFromHeaders(req);
-    const newUrl = new URL(`/${locale}${pathname === "/" ? "" : pathname}`, req.url);
+    const newUrl = new URL(
+      `/${locale}${pathname === "/" ? "" : pathname}`,
+      req.url,
+    );
+    newUrl.search = req.nextUrl.search; // Preserve query parameters
 
     const response = NextResponse.redirect(newUrl);
     // Set cookie for future requests
