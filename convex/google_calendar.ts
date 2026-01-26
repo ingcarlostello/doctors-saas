@@ -118,6 +118,8 @@ export const exchangeCode = action({
         }
 
         const tokenUrl = "https://oauth2.googleapis.com/token";
+        console.log("Exchanging code for tokens...");
+        
         const response = await fetch(tokenUrl, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -132,11 +134,14 @@ export const exchangeCode = action({
 
         if (!response.ok) {
             const err = await response.text();
+            console.error("Google Token Exchange Failed:", err);
             throw new Error(`Google Token Exchange Failed: ${err}`);
         }
 
         const tokens = await response.json();
         const { access_token, refresh_token, expires_in, scope, token_type } = tokens;
+
+        console.log("Tokens received. Refresh token present:", !!refresh_token);
 
         // Save to DB via internal mutation
         await ctx.runMutation(internal.google_calendar.saveTokens, {
@@ -178,8 +183,7 @@ export const saveTokens = internalMutation({
         if (!masterKey) throw new Error("Server Encryption Key Missing");
 
         const encAccess = await encryptWithAesGcm(args.accessToken, masterKey);
-        const encRefresh = await encryptWithAesGcm(args.refreshToken, masterKey);
-
+        
         // Calculate expiry timestamp
         const expiresAt = Date.now() + (args.expiresIn * 1000);
 
@@ -189,37 +193,37 @@ export const saveTokens = internalMutation({
             .withIndex("by_user", (q) => q.eq("userId", user._id))
             .unique();
 
-        const data = {
+        const data: any = {
             userId: user._id,
             accessTokenCiphertext: encAccess.ciphertext,
             accessTokenIv: encAccess.iv,
-            refreshTokenCiphertext: encRefresh.ciphertext,
-            refreshTokenIv: encRefresh.iv,
             expiresAt,
             tokenType: args.tokenType,
             scope: args.scope,
         };
 
+        if (args.refreshToken) {
+            const encRefresh = await encryptWithAesGcm(args.refreshToken, masterKey);
+            data.refreshTokenCiphertext = encRefresh.ciphertext;
+            data.refreshTokenIv = encRefresh.iv;
+        }
+
         if (existingToken) {
             // Update
-            // If refresh_token is empty (Google sometimes doesn't send it on 2nd auth), keep old one if possible?
-            // Actually prompt=consent forces it. But let's be safe.
-            let finalRefTxt = data.refreshTokenCiphertext;
-            let finalRefIv = data.refreshTokenIv;
-
-            if (!args.refreshToken && existingToken.refreshTokenCiphertext) {
-                finalRefTxt = existingToken.refreshTokenCiphertext;
-                finalRefIv = existingToken.refreshTokenIv;
+            // Keep old refresh token if new one is not provided
+            if (!args.refreshToken) {
+                 // We don't overwrite if not provided
             }
-
-            await ctx.db.patch(existingToken._id, {
-                ...data,
-                refreshTokenCiphertext: finalRefTxt,
-                refreshTokenIv: finalRefIv,
-            });
+            
+            await ctx.db.patch(existingToken._id, data);
         } else {
-            if (!args.refreshToken) throw new Error("No refresh token received");
-            await ctx.db.insert("google_calendar_tokens", data);
+            if (!args.refreshToken) throw new Error("No refresh token received for new connection");
+            await ctx.db.insert("google_calendar_tokens", {
+                ...data,
+                // Ensure typescript is happy - we checked args.refreshToken above
+                refreshTokenCiphertext: data.refreshTokenCiphertext!, 
+                refreshTokenIv: data.refreshTokenIv!,
+            });
         }
     }
 });
@@ -309,16 +313,19 @@ async function ensureAccessToken(ctx: ActionCtx): Promise<string> {
         if (!response.ok) {
             const err = await response.text();
             console.error("Token Refresh Failed:", err);
-            throw new Error("Could not refresh Google Token. Please reconnect.");
+            // Throw a specific error that frontend can recognize to force re-auth
+            throw new Error("Google Token Refresh Failed. Please reconnect.");
         }
 
         const newTokens = await response.json();
         const { access_token, expires_in, scope, token_type } = newTokens;
 
+        console.log("Token refreshed successfully.");
+
         // Save new access token
         await ctx.runMutation(internal.google_calendar.saveTokens, {
             accessToken: access_token,
-            refreshToken: tokens.refreshToken,
+            refreshToken: "", // Don't update refresh token if not returned
             expiresIn: expires_in,
             scope: scope || tokens.scope,
             tokenType: token_type || "Bearer",
@@ -337,39 +344,43 @@ export const listEvents = action({
         endTime: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
-        const user = await ctx.runQuery(api.users.currentUser, {});
-        if (!user) return "The user is not yet connected to Google Calendar. ";
+        try {
+            const accessToken = await ensureAccessToken(ctx);
 
-        const tokens = await ctx.runQuery(internal.google_calendar.getTokensInternal, { userId: user._id });
-        if (!tokens) {
-            return "The user is not yet connected to Google Calendar. ";
+            const params = new URLSearchParams({
+                calendarId: 'primary',
+                singleEvents: 'true',
+                orderBy: 'startTime',
+            });
+
+            if (args.startTime) params.append('timeMin', new Date(args.startTime).toISOString());
+            if (args.endTime) params.append('timeMax', new Date(args.endTime).toISOString());
+
+            const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`;
+            console.log("Listing events from:", url);
+
+            const response = await fetch(url, {
+                method: "GET",
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                console.error("Google Calendar API Error (ListEvents):", response.status, err);
+                throw new Error(`Google Calendar API Error: ${err}`);
+            }
+
+            const data = await response.json();
+            console.log(`Found ${data.items?.length || 0} events from Google.`);
+            return data.items || [];
+        } catch (error: any) {
+            console.error("listEvents action failed:", error);
+            // If it's the "not connected" error, return specific string for frontend
+            if (error.message === "Google Calendar not connected" || error.message.includes("Google Token Refresh Failed")) {
+                return "The user is not yet connected to Google Calendar. ";
+            }
+            throw error;
         }
-
-        const accessToken = await ensureAccessToken(ctx);
-
-        const params = new URLSearchParams({
-            calendarId: 'primary',
-            singleEvents: 'true',
-            orderBy: 'startTime',
-        });
-
-        if (args.startTime) params.append('timeMin', new Date(args.startTime).toISOString());
-        if (args.endTime) params.append('timeMax', new Date(args.endTime).toISOString());
-
-        const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`;
-
-        const response = await fetch(url, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (!response.ok) {
-            const err = await response.text();
-            throw new Error(`Google Calendar API Error: ${err}`);
-        }
-
-        const data = await response.json();
-        return data.items || [];
     }
 });
 
@@ -393,6 +404,8 @@ export const createEvent = action({
             attendees: args.attendees?.map(email => ({ email })),
         };
 
+        console.log("Creating event:", JSON.stringify(event));
+
         const response = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
             method: "POST",
             headers: {
@@ -404,10 +417,13 @@ export const createEvent = action({
 
         if (!response.ok) {
             const err = await response.text();
+            console.error("Create Event Failed:", response.status, err);
             throw new Error(`Failed to create event: ${err}`);
         }
 
-        return await response.json();
+        const resJson = await response.json();
+        console.log("Event created successfully:", resJson.id);
+        return resJson;
     }
 });
 
@@ -424,9 +440,6 @@ export const updateEvent = action({
     handler: async (ctx, args) => {
         const accessToken = await ensureAccessToken(ctx);
 
-        // First get the existing event to patch it (or just PATCH if API supports it, but PUT is standard for full update)
-        // Google supports PATCH. Let's use PATCH for partial updates.
-
         const patchBody: any = {};
         if (args.summary !== undefined) patchBody.summary = args.summary;
         if (args.description !== undefined) patchBody.description = args.description;
@@ -434,8 +447,10 @@ export const updateEvent = action({
         if (args.endTime !== undefined) patchBody.end = { dateTime: new Date(args.endTime).toISOString() };
         if (args.attendees !== undefined) patchBody.attendees = args.attendees.map(email => ({ email }));
 
+        console.log(`Updating event ${args.eventId} with:`, JSON.stringify(patchBody));
+
         const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${args.eventId}`, {
-            method: "PATCH",
+            method: "PATCH", // Using PATCH for partial update
             headers: {
                 Authorization: `Bearer ${accessToken}`,
                 "Content-Type": "application/json",
@@ -445,10 +460,13 @@ export const updateEvent = action({
 
         if (!response.ok) {
             const err = await response.text();
+            console.error("Update Event Failed:", response.status, err);
             throw new Error(`Failed to update event: ${err}`);
         }
 
-        return await response.json();
+        const resJson = await response.json();
+        console.log("Event updated successfully:", resJson.id);
+        return resJson;
     }
 });
 
@@ -458,6 +476,7 @@ export const deleteEvent = action({
         eventId: v.string(),
     },
     handler: async (ctx, args) => {
+        console.log("Deleting event:", args.eventId);
         const accessToken = await ensureAccessToken(ctx);
 
         const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${args.eventId}`, {
@@ -469,11 +488,18 @@ export const deleteEvent = action({
 
         if (!response.ok) {
             const err = await response.text();
-            // 410 Gone means already deleted, which is fine
-            if (response.status === 410) return { success: true };
+            
+            // 410 Gone means already deleted
+            if (response.status === 410) {
+                 console.log("Event already deleted (410)");
+                 return { success: true };
+            }
+            
+            console.error("Delete Event Failed:", response.status, err);
             throw new Error(`Failed to delete event: ${err}`);
         }
 
+        console.log("Event deleted successfully");
         return { success: true };
     }
 });
@@ -493,13 +519,13 @@ export const getCalendars = action({
 
         if (!response.ok) {
             const err = await response.text();
+            console.error("List Calendars Failed:", response.status, err);
             throw new Error(`Failed to list calendars: ${err}`);
         }
 
         const data = await response.json();
         const items = data.items || [];
 
-        // Map to simpler format
         return items.map((cal: any) => ({
             id: cal.id,
             summary: cal.summary,

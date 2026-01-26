@@ -16,9 +16,9 @@ export function useCalendarView(): UseCalendarViewResult {
     const [view, setView] = useState<View>(Views.WEEK);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
-    const loadEvents = useCallback(async () => {
+    const loadEvents = useCallback(async (forceRefresh = false) => {
         try {
-            if (status !== "connected") {
+            if (status !== "connected" || forceRefresh) {
                 setStatus("loading");
             }
 
@@ -48,12 +48,14 @@ export function useCalendarView(): UseCalendarViewResult {
             setStatus("connected");
         } catch (err: any) {
             console.error("Calendar load error:", err);
-            if (err.message && (err.message.includes("Google Calendar not connected") || err.message.includes("Unauthenticated"))) {
+            const errMsg = err.message || "";
+            if (errMsg.includes("Google Calendar not connected") || errMsg.includes("Google Token Refresh Failed") || errMsg.includes("Unauthenticated")) {
                 setStatus("disconnected");
             } else {
                 if (status !== "connected") {
                     setStatus("error");
                 }
+                // Optional: Toast for transient errors could be added here
             }
         }
     }, [date, listEvents, status, view]);

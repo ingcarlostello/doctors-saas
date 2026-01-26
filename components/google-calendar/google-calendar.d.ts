@@ -14,7 +14,7 @@ export interface UseCalendarViewResult {
     date: Date;
     view: View;
     selectedEvent: CalendarEvent | null;
-    loadEvents: () => Promise<void>;
+    loadEvents: (forceRefresh?: boolean) => Promise<void>;
     handleConnect: () => Promise<void>;
     onNavigate: (newDate: Date) => void;
     onView: (newView: View) => void;
