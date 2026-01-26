@@ -5,7 +5,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns'
 import { enUS } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { Button } from "@/components/ui/button";
-import { Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { RefreshCcw, Calendar as CalendarIcon } from "lucide-react";
 import { CreateEventDialog } from "./CreateEventDialog";
 import { EventDetailsDialog } from "./EventDetailsDialog";
 import { useCalendarView } from "./useCalendarView";
@@ -41,7 +41,7 @@ export function CalendarView() {
     if (status === "loading") {
         return (
             <div className="flex flex-col items-center justify-center h-[600px] border rounded-lg bg-card text-card-foreground">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <RefreshCcw className="h-8 w-8 animate-spin text-primary" />
                 <p className="mt-2 text-muted-foreground">Loading Calendar...</p>
             </div>
         );
@@ -78,6 +78,9 @@ export function CalendarView() {
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold tracking-tight">Schedule</h2>
                 <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => loadEvents(true)} title="Refresh Events">
+                        <RefreshCcw className="h-4 w-4" />
+                    </Button>
                     <CreateEventDialog onEventCreated={() => loadEvents()} />
                     <Button variant="outline" onClick={() => window.open('https://calendar.google.com', '_blank')}>
                         Open in Google Calendar
