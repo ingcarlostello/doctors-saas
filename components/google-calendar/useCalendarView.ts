@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useAction } from "convex/react";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { View, Views } from "react-big-calendar";
 import { CalendarEvent, CalendarStatus, UseCalendarViewResult } from "./google-calendar";
@@ -15,6 +15,26 @@ export function useCalendarView(): UseCalendarViewResult {
     const [date, setDate] = useState(new Date());
     const [view, setView] = useState<View>(Views.WEEK);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
+    // Alert Logic for Reminders
+    const sentReminders = useQuery(api.google_calendar.getRecentlySentReminders);
+    const alertedRef = useRef<Set<string>>(new Set());
+
+    useEffect(() => {
+        if (sentReminders) {
+            sentReminders.forEach((r) => {
+                if (!alertedRef.current.has(r._id)) {
+                    // avoid alerting for old events on initial load?
+                    // crude heuristic: only alert if event is in future or very recent?
+                    // For demo purposes, we alert once per session per event.
+                    if (r.reminderSent24h) {
+                        alert(`Recordatorio enviado: ${r.title}`);
+                        alertedRef.current.add(r._id);
+                    }
+                }
+            });
+        }
+    }, [sentReminders]);
 
     const loadEvents = useCallback(async (forceRefresh = false) => {
         try {

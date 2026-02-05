@@ -14,7 +14,7 @@ export function WhatsappTemplateContent() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const listTemplatesAction = useAction(api.twilio.listWhatsAppTemplates);
 
   const fetchTemplates = useCallback(async () => {
@@ -23,7 +23,7 @@ export function WhatsappTemplateContent() {
       const mappedTemplates: Template[] = data.map((t: any) => ({
         id: t.sid,
         friendlyName: t.friendlyName,
-        templateName: t.friendlyName, 
+        templateName: t.friendlyName,
         category: t.category,
         language: t.language,
         body: t.body,
@@ -42,10 +42,10 @@ export function WhatsappTemplateContent() {
 
   useEffect(() => {
     fetchTemplates();
-    
+
     // Polling cada 5 minutos (300000 ms)
     const intervalId = setInterval(fetchTemplates, 300000);
-    
+
     return () => clearInterval(intervalId);
   }, [fetchTemplates]);
 
@@ -62,6 +62,8 @@ export function WhatsappTemplateContent() {
       </div>
     );
   }
+
+  console.log('templates =====>', templates);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -89,6 +91,8 @@ export function WhatsappTemplateContent() {
 
       <TemplateStatCards stats={stats} />
 
+
+
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-foreground mb-4">
           Mis Templates
@@ -102,8 +106,8 @@ export function WhatsappTemplateContent() {
         )}
       </div>
 
-      <AddTemplateDialog 
-        open={isDialogOpen} 
+      <AddTemplateDialog
+        open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onSuccess={() => {
           setIsDialogOpen(false);

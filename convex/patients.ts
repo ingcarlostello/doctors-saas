@@ -67,6 +67,31 @@ export const list = query({
     },
 });
 
+export const getPatient = query({
+    args: { id: v.id("patients") },
+    handler: async (ctx, args) => {
+        const identity = await ctx.auth.getUserIdentity();
+        if (!identity) return null;
+
+        const patient = await ctx.db.get(args.id);
+        if (!patient) return null;
+
+        // Verify ownership
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_token", (q) =>
+                q.eq("tokenIdentifier", identity.tokenIdentifier)
+            )
+            .unique();
+
+        if (!user || user._id !== patient.userId) {
+            return null;
+        }
+
+        return patient;
+    },
+});
+
 export const remove = mutation({
     args: {
         id: v.id("patients"),

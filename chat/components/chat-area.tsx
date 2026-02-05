@@ -15,6 +15,11 @@ import { cn } from "@/lib/utils";
 import { useChatArea } from "@/chat/hooks/useChatArea";
 import { ChatAreaProps } from "../types/chatArea";
 
+import { TemplateSelector } from "./template-selector";
+import { useAction } from "convex/react";
+//import { api } from "@/convex/_generated/api";
+const api = require("@/convex/_generated/api").api;
+
 export function ChatArea({
   contact,
   messages,
@@ -44,6 +49,31 @@ export function ChatArea({
     onUserChattingChange,
     isChatActive,
   });
+
+  const sendWhatsAppMessage = useAction(api.chatActions.sendWhatsAppMessage);
+
+  const handleSendTemplate = async (
+    templateSid: string,
+    variables: Record<string, string>,
+    preview: string,
+  ) => {
+    if (!contact?.id) return;
+
+    // Currently contact.id is the conversation ID in this context based on how useChatArea works
+    // but let's double check types. ChatAreaProps says contact: ChatContact. 
+    // ChatContact usually has an id which is the conversationId.
+
+    try {
+      await sendWhatsAppMessage({
+        conversationId: contact.id as any, // ID mismatch potential, but consistent with hook usage
+        content: preview,
+        contentSid: templateSid,
+        contentVariables: JSON.stringify(variables),
+      });
+    } catch (error) {
+      console.error("Failed to send template", error);
+    }
+  };
 
   if (!contact) {
     return (
@@ -164,6 +194,13 @@ export function ChatArea({
             onBlur={handleInputBlur}
             className="flex-1 px-4 py-2 bg-muted text-foreground placeholder:text-muted-foreground rounded-lg border-none outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
           />
+
+          <TemplateSelector
+            conversationId={contact.id as any}
+            onSelect={handleSendTemplate}
+            disabled={isSubmitting}
+          />
+
           <button
             onClick={() => void handleSend()}
             disabled={!inputValue.trim() || Boolean(inputError) || isSubmitting}

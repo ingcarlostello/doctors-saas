@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { query, mutation, action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { anyApi } from "convex/server";
+
+const apiAny = anyApi as any;
 
 // Write your Convex functions in any file inside this directory (`convex`).
 // See https://docs.convex.dev/functions for more.
@@ -65,13 +67,13 @@ export const myAction = action({
     // const data = await response.json();
 
     //// Query data by running Convex queries.
-    const data = await ctx.runQuery(api.myFunctions.listNumbers, {
+    const data = await ctx.runQuery(apiAny.myFunctions.listNumbers, {
       count: 10,
     });
     console.log(data);
 
     //// Write data by running Convex mutations.
-    await ctx.runMutation(api.myFunctions.addNumber, {
+    await ctx.runMutation(apiAny.myFunctions.addNumber, {
       value: args.first,
     });
   },

@@ -6,5 +6,18 @@
     "day": "Día",
     "agenda": "Agenda",
     "noEvents": "Sin eventos",
-    "addEvent": "Agregar Evento"
+  "addEvent": "Agregar Evento",
+  "dialog": {
+    "title": "Crear nuevo evento",
+    "eventTitleLabel": "Título del evento",
+    "eventTitlePlaceholder": "Consulta",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Detalles...",
+    "patientLabel": "Paciente",
+    "patientSearchPlaceholder": "Selecciona un paciente...",
+    "noPatients": "No se encontraron pacientes.",
+    "startTimeLabel": "Hora de inicio",
+    "endTimeLabel": "Hora de fin",
+    "createButton": "Crear"
+  }
 }

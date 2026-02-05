@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
-import { api, internal } from "./_generated/api";
+import { anyApi } from "convex/server";
 import { ENV } from "../lib/env";
 import { TWILIO_CONFIG } from "../lib/config";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -13,6 +13,9 @@ import {
   type AttachmentInput,
 } from "./chatUtils";
 import { CHAT_LIMITS } from "./chatConfig";
+
+const apiAny = anyApi as any;
+const internalAny = anyApi as any;
 
 export const sendWhatsAppMessage: ReturnType<typeof action> = action({
   args: {
@@ -44,10 +47,10 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("No autenticado");
 
-    await ctx.runMutation(api.users.store, {});
+    await ctx.runMutation(apiAny.users.store, {});
 
     const conversation = await ctx.runQuery(
-      internal.chatInternal.getConversationForCurrentUser,
+      internalAny.chatInternal.getConversationForCurrentUser,
       { conversationId: args.conversationId },
     );
     if (conversation.channel !== "whatsapp") {
@@ -69,7 +72,7 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
     const attachments = (args.attachments as unknown as AttachmentInput[]) ?? [];
     assertAttachmentsValid(attachments);
 
-    const user = await ctx.runQuery(api.users.currentUser, {});
+    const user = await ctx.runQuery(apiAny.users.currentUser, {});
     if (!user) throw new Error("Usuario no encontrado");
 
     const accountSid = ENV.TWILIO_ACCOUNT_SID;
@@ -97,7 +100,7 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
     const timestamp = Date.now();
 
     const messageDocId: Id<"messages"> = await ctx.runMutation(
-      internal.chatInternal.insertOutgoingMessage,
+      internalAny.chatInternal.insertOutgoingMessage,
       {
         conversationId: args.conversationId,
         message_id,
@@ -134,7 +137,7 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
 
     if (!response.ok) {
       const errorText = await response.text();
-      await ctx.runMutation(internal.chatInternal.updateSendFailure, {
+      await ctx.runMutation(internalAny.chatInternal.updateSendFailure, {
         messageDocId,
         twilioStatus: `http_${response.status}`,
       });
@@ -145,20 +148,20 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
     const sid = data.sid ?? null;
     const twilioStatus = data.status ?? "sent";
 
-    await ctx.runMutation(internal.chatInternal.updateAfterSend, {
+    await ctx.runMutation(internalAny.chatInternal.updateAfterSend, {
       messageDocId,
       twilioMessageSid: sid ?? undefined,
       twilioStatus,
       whatsappMessageId: sid ?? undefined,
     });
 
-    await ctx.runMutation(internal.chatInternal.touchConversationAfterSend, {
+    await ctx.runMutation(internalAny.chatInternal.touchConversationAfterSend, {
       conversationId: args.conversationId,
       lastMessagePreview: content.length > 0 ? previewFromContent(content) : "Adjunto",
       lastMessageAt: timestamp,
     });
 
-    return await ctx.runQuery(internal.chatInternal.getMessageById, {
+    return await ctx.runQuery(internalAny.chatInternal.getMessageById, {
       messageDocId,
     });
   },

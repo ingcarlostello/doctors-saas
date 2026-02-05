@@ -1,7 +1,6 @@
-import { httpRouter } from "convex/server";
+import { httpRouter, anyApi } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { ENV } from "../lib/env";
-import { internal } from "./_generated/api";
 import {
   formDataToObject,
   generateMessageId,
@@ -108,6 +107,8 @@ async function verifyTwilioSignature(opts: {
   return safeEqual(expected, opts.signatureHeader);
 }
 
+const internalAny = anyApi as any;
+
 const twilioInbound = httpAction(async (ctx, request) => {
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
@@ -135,7 +136,7 @@ const twilioInbound = httpAction(async (ctx, request) => {
   const masterKey = ENV.TWILIO_SUBACCOUNT_AUTH_TOKEN_MASTER_KEY;
   if (masterKey && accountSid) {
     const stored = await ctx.runQuery(
-      internal.users.getTwilioWebhookSigningKeyByAccountSid,
+      internalAny.users.getTwilioWebhookSigningKeyByAccountSid,
       { accountSid },
     );
     if (stored) {
@@ -199,7 +200,7 @@ const twilioInbound = httpAction(async (ctx, request) => {
   const profileName = params.ProfileName ?? undefined;
 
   const ownerUserId = await ctx.runQuery(
-    internal.chatInternal.findOwnerUserIdByAssignedNumber,
+    internalAny.chatInternal.findOwnerUserIdByAssignedNumber,
     { assignedNumber },
   );
 
@@ -214,7 +215,7 @@ const twilioInbound = httpAction(async (ctx, request) => {
   }
 
   const conversationId = await ctx.runMutation(
-    internal.chatInternal.upsertConversationForInbound,
+    internalAny.chatInternal.upsertConversationForInbound,
     {
       ownerUserId,
       channel: "whatsapp",
@@ -260,7 +261,7 @@ const twilioInbound = httpAction(async (ctx, request) => {
   const message_id = messageSidOpt ?? generateMessageId();
   const timestamp = Date.now();
 
-  await ctx.runMutation(internal.chatInternal.insertInboundMessage, {
+  await ctx.runMutation(internalAny.chatInternal.insertInboundMessage, {
     ownerUserId,
     conversationId,
     message_id,
@@ -312,7 +313,7 @@ const twilioStatus = httpAction(async (ctx, request) => {
   const masterKey = ENV.TWILIO_SUBACCOUNT_AUTH_TOKEN_MASTER_KEY;
   if (masterKey && accountSid) {
     const stored = await ctx.runQuery(
-      internal.users.getTwilioWebhookSigningKeyByAccountSid,
+      internalAny.users.getTwilioWebhookSigningKeyByAccountSid,
       { accountSid },
     );
     if (stored) {
@@ -370,7 +371,7 @@ const twilioStatus = httpAction(async (ctx, request) => {
     return new Response("Bad Request", { status: 400 });
   }
 
-  await ctx.runMutation(internal.chatInternal.updateMessageStatusByTwilioSid, {
+  await ctx.runMutation(internalAny.chatInternal.updateMessageStatusByTwilioSid, {
     twilioMessageSid: messageSid,
     twilioStatus: messageStatus,
   });

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
+import { anyApi } from "convex/server";
 import {
   action,
   internalMutation,
@@ -8,6 +8,9 @@ import {
   query,
 } from "./_generated/server";
 import { ENV } from "../lib/env";
+
+const apiAny = anyApi as any;
+const internalAny = anyApi as any;
 
 function bytesToBase64(bytes: Uint8Array): string {
   if (typeof btoa === "function") {
@@ -184,7 +187,7 @@ export const setCurrentUserTwilioSubaccountAuthToken = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("No autenticado");
 
-    const user = await ctx.runQuery(api.users.currentUser, {});
+    const user = await ctx.runQuery(apiAny.users.currentUser, {});
     if (!user) throw new Error("Usuario no encontrado");
     if (!user.twilioSubaccountSid) {
       throw new Error("Este usuario no tiene subcuenta de Twilio configurada");
@@ -200,7 +203,7 @@ export const setCurrentUserTwilioSubaccountAuthToken = action({
       plaintext: args.authToken,
     });
 
-    await ctx.runMutation(internal.users.setTwilioSubaccountAuthTokenEncrypted, {
+    await ctx.runMutation(internalAny.users.setTwilioSubaccountAuthTokenEncrypted, {
       userId: user._id,
       ciphertextBase64: encrypted.ciphertextBase64,
       ivBase64: encrypted.ivBase64,
