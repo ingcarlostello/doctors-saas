@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { useAction, useQuery } from "convex/react";
+const api = require("@/convex/_generated/api").api;
 import { View, Views } from "react-big-calendar";
 import { CalendarEvent, CalendarStatus, UseCalendarViewResult } from "./google-calendar";
 
+
 export function useCalendarView(): UseCalendarViewResult {
-    const listEvents = useAction(api.google_calendar.listEvents);
+    const listEvents = useAction(api.google_calendar.listEvents)
     const getAuthUrl = useAction(api.google_calendar.getAuthUrl);
 
     const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -15,6 +16,9 @@ export function useCalendarView(): UseCalendarViewResult {
     const [date, setDate] = useState(new Date());
     const [view, setView] = useState<View>(Views.WEEK);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
+    // Alert Logic for Reminders removed as we use WhatsApp notifications now
+
 
     const loadEvents = useCallback(async (forceRefresh = false) => {
         try {

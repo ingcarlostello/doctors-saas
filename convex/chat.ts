@@ -271,3 +271,46 @@ export const getPresence = query({
     return { ...presence, isOnline };
   },
 });
+
+export const getConversationContext = query({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("No autenticado");
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) return null;
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (!user || user._id !== conversation.ownerUserId) {
+      throw new Error("No autorizado");
+    }
+
+    const patient = await ctx.db
+      .query("patients")
+      .withIndex("by_user_phone", (q) =>
+        q.eq("userId", user._id).eq("phoneNumber", conversation.externalContact.phoneNumber)
+      )
+      .first();
+
+    const formatDate = (timestamp?: number) => {
+      if (!timestamp) return "No upcoming appointment";
+      return new Date(timestamp).toLocaleString();
+    };
+
+    return {
+      patientName: patient?.fullName || conversation.externalContact.name || "Paciente",
+      doctorName: user.name || "Doctor",
+      nextAppointmentDate: formatDate(patient?.nextAppointmentDate),
+      // Add more context variables here as needed
+    };
+  },
+});

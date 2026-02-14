@@ -151,6 +151,19 @@ export interface CalendarDictionary {
     agenda: string;
     noEvents: string;
     addEvent: string;
+    dialog: {
+        title: string;
+        eventTitleLabel: string;
+        eventTitlePlaceholder: string;
+        descriptionLabel: string;
+        descriptionPlaceholder: string;
+        patientLabel: string;
+        patientSearchPlaceholder: string;
+        noPatients: string;
+        startTimeLabel: string;
+        endTimeLabel: string;
+        createButton: string;
+    };
 }
 
 export interface ChatDictionary {

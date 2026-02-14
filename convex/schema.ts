@@ -18,6 +18,7 @@ export default defineSchema({
     twilioSubaccountSid: v.optional(v.string()),
     twilioSubaccountAuthTokenCiphertext: v.optional(v.string()),
     twilioSubaccountAuthTokenIv: v.optional(v.string()),
+    calendarEmail: v.optional(v.string()),
   })
     .index("by_token", ["tokenIdentifier"])
     .index("by_twilio_subaccount_sid", ["twilioSubaccountSid"]),
@@ -115,6 +116,16 @@ export default defineSchema({
     email: v.optional(v.string()),
     lastAppointmentDate: v.optional(v.number()),
     nextAppointmentDate: v.optional(v.number()),
+    appointmentHistory: v.optional(
+      v.array(
+        v.object({
+          appointmentId: v.string(),
+          date: v.number(),
+          status: v.string(),
+          notes: v.optional(v.string()),
+        })
+      )
+    ),
   })
     .index("by_user", ["userId"])
     .index("by_user_dni", ["userId", "dni"])
@@ -149,4 +160,33 @@ export default defineSchema({
     email: v.optional(v.string()), // Associated Google email
     calendarId: v.optional(v.string()),
   }).index("by_user", ["userId"]),
+
+  calendar_events: defineTable({
+    eventId: v.string(), // Google's unique ID
+    userId: v.id("users"), // Owner of the calendar
+    calendarId: v.string(), // Calendar source
+    title: v.string(),
+    description: v.optional(v.string()),
+    startTime: v.number(),
+    endTime: v.number(),
+    attendees: v.optional(v.array(v.string())), // emails
+    status: v.string(), // confirmed, tentative, cancelled
+    htmlLink: v.optional(v.string()), // link to event
+    lastSyncedAt: v.number(),
+    reminderSent24h: v.boolean(), // default: false
+    // Optional field for customer whatsapp number
+    customersWhatsappNumber: v.optional(v.string()), // Optional field for customer whatsapp number
+    patientId: v.optional(v.id("patients")),
+    patientName: v.optional(v.string()),
+
+    // Template SID for reminders (resolved at schedule time)
+    reminderTemplateSid: v.optional(v.string()),
+
+    // Scheduled Job IDs (for cancelling/rescheduling)
+    reminderJobId24h: v.optional(v.id("_scheduled_functions")),
+    reminderJobId1h: v.optional(v.id("_scheduled_functions")),
+  })
+    .index("by_eventId", ["eventId"])
+    .index("by_user_start", ["userId", "startTime"])
+    .index("by_reminder_status", ["userId", "reminderSent24h", "startTime"]),
 });

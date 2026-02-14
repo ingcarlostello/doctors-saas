@@ -1,6 +1,54 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 
+export const getOrCreateConversationSystem = internalMutation({
+  args: {
+    ownerUserId: v.id("users"),
+    phoneNumber: v.string(),
+    assignedNumber: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("conversations")
+      .withIndex("by_owner_phone", (q) =>
+        q
+          .eq("ownerUserId", args.ownerUserId)
+          .eq("externalContact.phoneNumber", args.phoneNumber),
+      )
+      .filter((q) => q.eq(q.field("channel"), "whatsapp"))
+      .first();
+
+    if (existing) {
+      return existing._id;
+    }
+
+    return await ctx.db.insert("conversations", {
+      ownerUserId: args.ownerUserId,
+      channel: "whatsapp",
+      externalContact: {
+        phoneNumber: args.phoneNumber,
+      },
+      assignedNumber: args.assignedNumber,
+      unreadCount: 0,
+    });
+  },
+});
+
+// ─── Internal queries for system-level access (no auth) ───
+export const getUserById = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.userId);
+  },
+});
+
+export const getConversationById = internalQuery({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.conversationId);
+  },
+});
+
 export const findOwnerUserIdByAssignedNumber = internalQuery({
   args: { assignedNumber: v.string() },
   handler: async (ctx, args) => {
@@ -302,19 +350,75 @@ export const touchConversationAfterSend = internalMutation({
     lastMessageAt: v.number(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("No autenticado");
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier),
-      )
-      .unique();
-    if (!user) throw new Error("Usuario no encontrado");
-    const userId = user._id;
     const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation || conversation.ownerUserId !== userId) {
+    if (!conversation) throw new Error("Conversación no encontrada");
+
+    await ctx.db.patch(args.conversationId, {
+      lastMessagePreview: args.lastMessagePreview,
+      lastMessageAt: args.lastMessageAt,
+    });
+  },
+});
+
+// ─── System-level: insert outgoing message (no auth, takes userId) ───
+export const insertOutgoingMessageSystem = internalMutation({
+  args: {
+    userId: v.id("users"),
+    conversationId: v.id("conversations"),
+    message_id: v.string(),
+    content: v.optional(v.string()),
+    timestamp: v.number(),
+    attachments: v.optional(
+      v.array(
+        v.object({
+          kind: v.union(
+            v.literal("image"),
+            v.literal("audio"),
+            v.literal("video"),
+            v.literal("file"),
+          ),
+          url: v.optional(v.string()),
+          storageId: v.optional(v.id("_storage")),
+          mimeType: v.optional(v.string()),
+          sizeBytes: v.number(),
+          durationSeconds: v.optional(v.number()),
+          width: v.optional(v.number()),
+          height: v.optional(v.number()),
+        }),
+      ),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.ownerUserId !== args.userId) {
+      throw new Error("No autorizado");
+    }
+
+    return await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      message_id: args.message_id,
+      content: args.content,
+      sender_type: { kind: "user" as const, user_id: args.userId },
+      timestamp: args.timestamp,
+      direction: "out",
+      status: "queued",
+      attachments: args.attachments,
+      is_deleted: false,
+    });
+  },
+});
+
+// ─── System-level: touch conversation after send (no auth, takes userId) ───
+export const touchConversationAfterSendSystem = internalMutation({
+  args: {
+    userId: v.id("users"),
+    conversationId: v.id("conversations"),
+    lastMessagePreview: v.string(),
+    lastMessageAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.ownerUserId !== args.userId) {
       throw new Error("No autorizado");
     }
 

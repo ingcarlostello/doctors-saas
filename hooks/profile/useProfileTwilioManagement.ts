@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
+const api = require("@/convex/_generated/api").api;
 import type { MainAccountNumber } from "@/chat/types/chat";
 
 export function useProfileTwilioManagement({

@@ -3,7 +3,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStoreUserEffect } from "../useStoreUserEffect";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+const api = require("@/convex/_generated/api").api;
 import { formatRelativeTime } from "@/chat/utils/time";
 import { UiChat } from "@/chat/types/chat";
 import { messageToUiMessage } from "@/chat/utils/messageMappers";
@@ -86,7 +86,7 @@ export function useChat() {
 
   const notificationItems = useMemo(
     () =>
-      (conversations ?? []).map((conversation) => ({
+      (conversations ?? []).map((conversation: any) => ({
         id: conversation._id,
         unreadCount: conversation.unreadCount,
         lastMessageAt: conversation.lastMessageAt,
@@ -103,7 +103,7 @@ export function useChat() {
 
   const uiChats: UiChat[] = useMemo(() => {
     const list = conversations ?? [];
-    return list.map((c) => {
+    return list.map((c: any) => {
       const name =
         c.externalContact.name?.trim() || c.externalContact.phoneNumber;
       const lastMessage = c.lastMessagePreview ?? "";
@@ -133,7 +133,7 @@ export function useChat() {
   const selectedConversation = useMemo(() => {
     if (!selectedConversationId) return null;
     return (
-      (conversations ?? []).find((c) => c._id === selectedConversationId) ??
+      (conversations ?? []).find((c: any) => c._id === selectedConversationId) ??
       null
     );
   }, [conversations, selectedConversationId]);

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useProfile } from "@/hooks/profile/useProfile";
 import { useProfileTwilioManagement } from "@/hooks/profile/useProfileTwilioManagement";
 import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
+const api = require("@/convex/_generated/api").api;
 import { useState } from "react";
 
 export default function ProfilePage() {

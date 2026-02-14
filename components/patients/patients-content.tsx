@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Search, Filter, Plus, MoreHorizontal, Phone, Mail, Calendar, Eye, Edit, MessageSquareText } from "lucide-react"
 import { toast } from "sonner"
 import { useMutation, useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
+const api = require("@/convex/_generated/api").api;
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -127,7 +127,7 @@ export function PatientsContent() {
   }
 
   const filteredPatients = patients?.filter(
-    (patient) =>
+    (patient: any) =>
       patient.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patient.phoneNumber.includes(searchQuery)
   ) || []
@@ -199,7 +199,7 @@ export function PatientsContent() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredPatients.map((patient) => (
+              filteredPatients.map((patient: any) => (
                 <TableRow
                   key={patient._id}
                   className="cursor-pointer transition-colors hover:bg-secondary/50"

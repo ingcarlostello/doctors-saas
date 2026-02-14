@@ -1,5 +1,5 @@
 import { action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { anyApi } from "convex/server";
 import { TWILIO_CONFIG } from "../lib/config";
 import { ENV } from "../lib/env";
 import type { TwilioIncomingPhoneNumber } from "../interfaces/convex/twilio";
@@ -20,6 +20,8 @@ type TwilioMappedPhoneNumber = {
 type AssignNumberArgs = {
   phoneNumberSid: string;
 };
+
+const apiAny = anyApi as any;
 
 // Crypto Helpers (duplicated from users.ts for now)
 function base64ToBytes(base64: string): Uint8Array {
@@ -68,7 +70,7 @@ async function decryptWithAesGcmBase64(opts: {
 }
 
 async function getSubaccountAuthHeader(ctx: any): Promise<string> {
-  const currentUser = await ctx.runQuery(api.users.currentUser, {});
+  const currentUser = await ctx.runQuery(apiAny.users.currentUser, {});
   if (!currentUser || !currentUser.twilioSubaccountSid) {
     throw new Error("El usuario no tiene subcuenta de Twilio configurada.");
   }
@@ -151,9 +153,9 @@ export const createTwilioSubaccount = action({
 
     const data = await response.json();
 
-    const userId = await ctx.runMutation(api.users.store, {});
+    const userId = await ctx.runMutation(apiAny.users.store, {});
 
-    await ctx.runMutation(api.users.setTwilioSubaccountSid, {
+    await ctx.runMutation(apiAny.users.setTwilioSubaccountSid, {
       userId,
       twilioSubaccountSid: data.sid,
     });
@@ -225,7 +227,7 @@ export const assignNumberToCurrentUserSubaccount = action({
     }
 
     // Obtenemos el usuario actual desde Convex para acceder a su twilioSubaccountSid
-    const currentUser = await ctx.runQuery(api.users.currentUser, {});
+    const currentUser = await ctx.runQuery(apiAny.users.currentUser, {});
     if (!currentUser) {
       throw new Error("No se encontró el usuario en la base de datos");
     }
@@ -268,7 +270,7 @@ export const assignNumberToCurrentUserSubaccount = action({
       capabilities: data.capabilities,
     };
 
-    await ctx.runMutation(api.users.addAssignedNumberToCurrentUser, {
+    await ctx.runMutation(apiAny.users.addAssignedNumberToCurrentUser, {
       phoneNumber: result.phoneNumber,
     });
 
@@ -295,7 +297,7 @@ export const listCurrentUserSubaccountNumbers = action({
       );
     }
 
-    const currentUser = await ctx.runQuery(api.users.currentUser, {});
+    const currentUser = await ctx.runQuery(apiAny.users.currentUser, {});
     if (!currentUser || !currentUser.twilioSubaccountSid) {
       return [];
     }
@@ -330,12 +332,13 @@ export const listWhatsAppTemplates = action({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
+    console.log('identity =====>', identity);
     if (!identity) {
       throw new Error("Debes estar autenticado para listar los templates");
     }
 
     // Check if user has subaccount configured
-    const currentUser = await ctx.runQuery(api.users.currentUser, {});
+    const currentUser = await ctx.runQuery(apiAny.users.currentUser, {});
     if (
       !currentUser ||
       !currentUser.twilioSubaccountSid ||
@@ -379,7 +382,7 @@ export const listWhatsAppTemplates = action({
       }>;
     };
 
-    return (data.contents || []).map((t) => {
+    const mapped = (data.contents || []).map((t) => {
       // Extraer cuerpo del mensaje (prioridad: text > quick-reply > media)
       let body = "";
       let buttons: string[] = [];
@@ -392,7 +395,7 @@ export const listWhatsAppTemplates = action({
           (a: any) => a.title
         );
       } else if (t.types?.["twilio/media"]) {
-         body = t.types["twilio/media"].body || "Media message";
+        body = t.types["twilio/media"].body || "Media message";
       }
 
       return {
@@ -408,6 +411,28 @@ export const listWhatsAppTemplates = action({
         buttons,
       };
     });
+
+    // Sync templates to local DB for background jobs (no auth needed)
+    try {
+      await ctx.runMutation(apiAny.templates.syncTemplates, {
+        userId: currentUser._id,
+        templates: mapped.map((t) => ({
+          sid: t.sid,
+          name: t.friendlyName,
+          language: t.language,
+          category: t.category,
+          status: t.status,
+          variables: t.variables,
+          types: t.types,
+          body: t.body,
+        })),
+      });
+    } catch (e) {
+      console.error("Error syncing templates to local DB:", e);
+      // Don't fail the whole request if sync fails
+    }
+
+    return mapped;
   },
 });
 
@@ -476,4 +501,75 @@ export const getTemplateStatus = action({
 
     return await response.json();
   }
+});
+
+export const sendTemplateToPatient = action({
+  args: {
+    eventId: v.string(), // Accepts Google Event ID
+    templateSid: v.string(),
+    variables: v.optional(v.string()), // JSON string for variables if needed
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("No autenticado");
+
+    // 1. Get Event
+    let event = await ctx.runQuery(apiAny.google_calendar.getEventByGoogleId, {
+      eventId: args.eventId,
+    });
+
+    if (!event) {
+      // Fallback: Try to see if it's an internal ID
+      try {
+        const internalId = args.eventId as any; // Cast to avoid TS error if validating
+        event = await ctx.runQuery(apiAny.google_calendar.getEventById, { eventId: internalId });
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    if (!event) {
+      throw new Error(`Evento no encontrado: ${args.eventId}`);
+    }
+
+    // 2. Get Phone Number
+    let phoneNumber: string | undefined;
+    let patientName: string | undefined;
+
+    if (event.patientId) {
+      const patient = await ctx.runQuery(apiAny.patients.getPatient, {
+        id: event.patientId,
+      });
+      if (patient) {
+        phoneNumber = patient.phoneNumber;
+        patientName = patient.fullName;
+      }
+    }
+
+    if (!phoneNumber) {
+      phoneNumber = event.customersWhatsappNumber;
+    }
+
+    if (!phoneNumber) {
+      throw new Error("No se encontró número de teléfono para este evento (ni paciente vinculado ni customersWhatsappNumber)");
+    }
+
+    // 3. Ensure Conversation Exists
+    const conversationId = await ctx.runMutation(apiAny.chat.upsertConversation, {
+      channel: "whatsapp",
+      externalContact: {
+        phoneNumber: phoneNumber,
+        name: patientName || event.patientName || "Paciente",
+      },
+    });
+
+    // 4. Send Template Message
+    await ctx.runAction(apiAny.chatActions.sendWhatsAppMessage, {
+      conversationId,
+      contentSid: args.templateSid,
+      contentVariables: args.variables,
+    });
+
+    return { success: true, conversationId };
+  },
 });
