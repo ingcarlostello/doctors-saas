@@ -332,6 +332,7 @@ export const listWhatsAppTemplates = action({
   args: {},
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
+    console.log('identity =====>', identity);
     if (!identity) {
       throw new Error("Debes estar autenticado para listar los templates");
     }
@@ -381,7 +382,7 @@ export const listWhatsAppTemplates = action({
       }>;
     };
 
-    return (data.contents || []).map((t) => {
+    const mapped = (data.contents || []).map((t) => {
       // Extraer cuerpo del mensaje (prioridad: text > quick-reply > media)
       let body = "";
       let buttons: string[] = [];
@@ -410,6 +411,28 @@ export const listWhatsAppTemplates = action({
         buttons,
       };
     });
+
+    // Sync templates to local DB for background jobs (no auth needed)
+    try {
+      await ctx.runMutation(apiAny.templates.syncTemplates, {
+        userId: currentUser._id,
+        templates: mapped.map((t) => ({
+          sid: t.sid,
+          name: t.friendlyName,
+          language: t.language,
+          category: t.category,
+          status: t.status,
+          variables: t.variables,
+          types: t.types,
+          body: t.body,
+        })),
+      });
+    } catch (e) {
+      console.error("Error syncing templates to local DB:", e);
+      // Don't fail the whole request if sync fails
+    }
+
+    return mapped;
   },
 });
 

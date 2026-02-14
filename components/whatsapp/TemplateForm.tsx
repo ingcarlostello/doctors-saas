@@ -17,7 +17,7 @@ import { Plus, Trash2, MessageSquare, Info } from "lucide-react";
 import { toast } from "sonner";
 import { WhatsAppPreview } from "./WhatsAppPreview";
 import { useAction, useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+const api = require("@/convex/_generated/api").api;
 
 interface QuickReplyButton {
   id: string;

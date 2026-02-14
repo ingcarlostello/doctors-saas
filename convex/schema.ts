@@ -179,6 +179,9 @@ export default defineSchema({
     patientId: v.optional(v.id("patients")),
     patientName: v.optional(v.string()),
 
+    // Template SID for reminders (resolved at schedule time)
+    reminderTemplateSid: v.optional(v.string()),
+
     // Scheduled Job IDs (for cancelling/rescheduling)
     reminderJobId24h: v.optional(v.id("_scheduled_functions")),
     reminderJobId1h: v.optional(v.id("_scheduled_functions")),

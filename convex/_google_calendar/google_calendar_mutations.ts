@@ -4,7 +4,8 @@ import { v } from "convex/values";
 import { ENV } from "../../lib/env";
 import { encryptWithAesGcm } from "./google_calendar_helpers";
 
-const internalAny = anyApi as any;
+const internal = require("../_generated/api").internal;
+const internalAny = internal as any;
 
 export const saveTokens = internalMutation({
   args: {
@@ -23,7 +24,7 @@ export const saveTokens = internalMutation({
       .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
       .unique();
     if (!user) throw new Error("User not found");
-    
+
     // Update user with calendarEmail if provided
     if (args.calendarEmail) {
       await ctx.db.patch(user._id, { calendarEmail: args.calendarEmail });
@@ -140,9 +141,9 @@ export const saveSyncedEvents = internalMutation({
         status: event.status,
         htmlLink: event.htmlLink,
         attendees: event.attendees?.map((a: any) => a.email).filter(Boolean),
-        patientId: event.patientId,
-        patientName: event.patientName,
-        customersWhatsappNumber: event.customersWhatsappNumber,
+        patientId: event.patientId ?? existing?.patientId,
+        patientName: event.patientName ?? existing?.patientName,
+        customersWhatsappNumber: event.customersWhatsappNumber ?? existing?.customersWhatsappNumber,
         lastSyncedAt: now,
       };
       if (existing) {
@@ -150,10 +151,18 @@ export const saveSyncedEvents = internalMutation({
           ...eventData,
           reminderSent24h: existing.reminderSent24h,
         });
+        // Look up reminder template SID from local DB
+        const reminderTemplate = await ctx.db
+          .query("templates")
+          .withIndex("by_user", (q: any) => q.eq("userId", user._id))
+          .filter((q: any) => q.eq(q.field("name"), "recordatorio_cita"))
+          .first();
+
         await ctx.runMutation(internalAny.notifications.scheduleReminders, {
           eventId: event.eventId,
           startTime,
           title: event.summary || "No Title",
+          contentSid: reminderTemplate?.sid,
         });
 
         // Update Patient History if patientId exists
@@ -182,10 +191,18 @@ export const saveSyncedEvents = internalMutation({
           eventId: event.eventId,
           reminderSent24h: false,
         });
+        // Look up reminder template SID from local DB
+        const reminderTemplateNew = await ctx.db
+          .query("templates")
+          .withIndex("by_user", (q: any) => q.eq("userId", user._id))
+          .filter((q: any) => q.eq(q.field("name"), "recordatorio_cita"))
+          .first();
+
         await ctx.runMutation(internalAny.notifications.scheduleReminders, {
           eventId: event.eventId,
           startTime,
           title: event.summary || "No Title",
+          contentSid: reminderTemplateNew?.sid,
         });
 
         // Update Patient History if patientId exists
@@ -336,10 +353,18 @@ export const saveSyncedEventsForUser = internalMutation({
           eventId: event.eventId,
           reminderSent24h: false,
         });
+        // Look up reminder template SID from local DB
+        const reminderTemplateSyncUser = await ctx.db
+          .query("templates")
+          .withIndex("by_user", (q: any) => q.eq("userId", userId))
+          .filter((q: any) => q.eq(q.field("name"), "recordatorio_cita"))
+          .first();
+
         await ctx.runMutation(internalAny.notifications.scheduleReminders, {
           eventId: event.eventId,
           startTime,
           title: event.summary || "No Title",
+          contentSid: reminderTemplateSyncUser?.sid,
         });
       }
     }

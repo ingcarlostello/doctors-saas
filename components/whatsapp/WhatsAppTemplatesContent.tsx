@@ -5,7 +5,7 @@ import { TemplateList } from "./TemplateList";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Plus } from "lucide-react";
 import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
+const api = require("@/convex/_generated/api").api;
 import { toast } from "sonner";
 import { AddTemplateDialog } from "./add-template-dialog";
 import { Template } from "./TemplateListItem";

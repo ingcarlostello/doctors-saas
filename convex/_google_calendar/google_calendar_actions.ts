@@ -3,10 +3,12 @@ import { anyApi } from "convex/server";
 import { v } from "convex/values";
 import { ENV } from "../../lib/env";
 
-const internalAny = anyApi as any;
+// @ts-ignore
+const internal = require("../_generated/api").internal;
+const internalAny = internal as any;
 const apiAny = anyApi as any;
 
-async function ensureAccessToken(ctx: ActionCtx): Promise<string> {
+async function ensureAccessToken(ctx: any): Promise<string> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
   const user = await ctx.runQuery(apiAny.users.currentUser, {});
@@ -47,7 +49,7 @@ async function ensureAccessToken(ctx: ActionCtx): Promise<string> {
   return tokens.accessToken;
 }
 
-async function ensureAccessTokenForUser(ctx: ActionCtx, userId: any): Promise<string> {
+async function ensureAccessTokenForUser(ctx: any, userId: any): Promise<string> {
   const tokens = await ctx.runQuery(internalAny.google_calendar.getTokensInternal, { userId });
   if (!tokens) throw new Error("Google Calendar not connected for user " + userId);
   const now = Date.now();

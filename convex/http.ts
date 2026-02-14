@@ -107,7 +107,9 @@ async function verifyTwilioSignature(opts: {
   return safeEqual(expected, opts.signatureHeader);
 }
 
-const internalAny = anyApi as any;
+// @ts-ignore
+const internal = require("./_generated/api").internal;
+const internalAny = internal as any;
 
 const twilioInbound = httpAction(async (ctx, request) => {
   if (request.method !== "POST") {

@@ -7,7 +7,7 @@ import { Calendar, Users, Megaphone, X, MessagesSquare, Settings, FileCheck, Lay
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
+const api = require("@/convex/_generated/api").api;
 import { useNamespace } from "@/components/TranslationProvider"
 import { getLocaleFromPath } from "@/lib/i18n"
 
@@ -28,7 +28,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
   const locale = getLocaleFromPath(pathname)
   const conversations = useQuery(api.chat.listConversations, {})
-  const hasUnreadMessages = (conversations ?? []).some((c) => (c.unreadCount ?? 0) > 0)
+  const hasUnreadMessages = (conversations ?? []).some((c: any) => (c.unreadCount ?? 0) > 0)
 
   const { t: commonT } = useNamespace("common")
   const { t: dashboardT } = useNamespace("dashboard")

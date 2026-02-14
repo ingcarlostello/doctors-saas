@@ -17,7 +17,6 @@ import { ChatAreaProps } from "../types/chatArea";
 
 import { TemplateSelector } from "./template-selector";
 import { useAction } from "convex/react";
-//import { api } from "@/convex/_generated/api";
 const api = require("@/convex/_generated/api").api;
 
 export function ChatArea({

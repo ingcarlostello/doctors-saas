@@ -83,3 +83,13 @@ export const getEventByGoogleId = query({
       .unique();
   },
 });
+
+export const getEventByGoogleIdInternal = internalQuery({
+  args: { eventId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("calendar_events")
+      .withIndex("by_eventId", (q) => q.eq("eventId", args.eventId))
+      .unique();
+  },
+});

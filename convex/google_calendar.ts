@@ -9,21 +9,22 @@ import {
   performCronSync as performCronSyncImpl,
   syncEventsAction as syncEventsActionImpl,
   updateEvent as updateEventImpl,
-} from "./google_calendar/google_calendar_actions";
+} from "./_google_calendar/google_calendar_actions";
 import {
   deleteLocalEvent as deleteLocalEventImpl,
   saveSyncedEvents as saveSyncedEventsImpl,
   saveSyncedEventsForUser as saveSyncedEventsForUserImpl,
   saveTokens as saveTokensImpl,
   saveTokensForUserInternal as saveTokensForUserInternalImpl,
-} from "./google_calendar/google_calendar_mutations";
+} from "./_google_calendar/google_calendar_mutations";
 import {
   getAllUsersWithTokens as getAllUsersWithTokensImpl,
   getRecentlySentReminders as getRecentlySentRemindersImpl,
   getTokensInternal as getTokensInternalImpl,
   getEventById as getEventByIdImpl,
   getEventByGoogleId as getEventByGoogleIdImpl,
-} from "./google_calendar/google_calendar_queries";
+  getEventByGoogleIdInternal as getEventByGoogleIdInternalImpl,
+} from "./_google_calendar/google_calendar_queries";
 
 export const createEvent = createEventImpl;
 export const deleteEvent = deleteEventImpl;
@@ -47,3 +48,4 @@ export const getRecentlySentReminders = getRecentlySentRemindersImpl;
 export const getTokensInternal = getTokensInternalImpl;
 export const getEventById = getEventByIdImpl;
 export const getEventByGoogleId = getEventByGoogleIdImpl;
+export const getEventByGoogleIdInternal = getEventByGoogleIdInternalImpl;

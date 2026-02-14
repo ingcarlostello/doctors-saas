@@ -8,6 +8,11 @@
  * @module
  */
 
+import type * as _google_calendar_google_calendar_actions from "../_google_calendar/google_calendar_actions.js";
+import type * as _google_calendar_google_calendar_helpers from "../_google_calendar/google_calendar_helpers.js";
+import type * as _google_calendar_google_calendar_mutations from "../_google_calendar/google_calendar_mutations.js";
+import type * as _google_calendar_google_calendar_queries from "../_google_calendar/google_calendar_queries.js";
+import type * as _google_calendar_index from "../_google_calendar/index.js";
 import type * as chat from "../chat.js";
 import type * as chatActions from "../chatActions.js";
 import type * as chatConfig from "../chatConfig.js";
@@ -15,11 +20,6 @@ import type * as chatInternal from "../chatInternal.js";
 import type * as chatUtils from "../chatUtils.js";
 import type * as crons from "../crons.js";
 import type * as google_calendar from "../google_calendar.js";
-import type * as google_calendar_google_calendar_actions from "../google_calendar/google_calendar_actions.js";
-import type * as google_calendar_google_calendar_helpers from "../google_calendar/google_calendar_helpers.js";
-import type * as google_calendar_google_calendar_mutations from "../google_calendar/google_calendar_mutations.js";
-import type * as google_calendar_google_calendar_queries from "../google_calendar/google_calendar_queries.js";
-import type * as google_calendar_index from "../google_calendar/index.js";
 import type * as http from "../http.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as notifications from "../notifications.js";
@@ -35,6 +35,11 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "_google_calendar/google_calendar_actions": typeof _google_calendar_google_calendar_actions;
+  "_google_calendar/google_calendar_helpers": typeof _google_calendar_google_calendar_helpers;
+  "_google_calendar/google_calendar_mutations": typeof _google_calendar_google_calendar_mutations;
+  "_google_calendar/google_calendar_queries": typeof _google_calendar_google_calendar_queries;
+  "_google_calendar/index": typeof _google_calendar_index;
   chat: typeof chat;
   chatActions: typeof chatActions;
   chatConfig: typeof chatConfig;
@@ -42,11 +47,6 @@ declare const fullApi: ApiFromModules<{
   chatUtils: typeof chatUtils;
   crons: typeof crons;
   google_calendar: typeof google_calendar;
-  "google_calendar/google_calendar_actions": typeof google_calendar_google_calendar_actions;
-  "google_calendar/google_calendar_helpers": typeof google_calendar_google_calendar_helpers;
-  "google_calendar/google_calendar_mutations": typeof google_calendar_google_calendar_mutations;
-  "google_calendar/google_calendar_queries": typeof google_calendar_google_calendar_queries;
-  "google_calendar/index": typeof google_calendar_index;
   http: typeof http;
   myFunctions: typeof myFunctions;
   notifications: typeof notifications;

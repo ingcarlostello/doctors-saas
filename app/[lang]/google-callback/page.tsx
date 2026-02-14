@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { useAction } from "convex/react";
-import { api } from "@/convex/_generated/api";
+const api = require("@/convex/_generated/api").api;
 import { toast } from "sonner";
 import type { Locale } from "@/lib/i18n";
 import { useStoreUserEffect } from "@/hooks/useStoreUserEffect";

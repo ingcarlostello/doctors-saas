@@ -2,7 +2,7 @@
 
 import { useAction } from "convex/react"
 import { useState } from "react"
-import { api } from "@/convex/_generated/api"
+const api = require("@/convex/_generated/api").api;
 
 type UseEventDetailsDialogProps = {
     event: any;

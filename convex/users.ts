@@ -10,7 +10,9 @@ import {
 import { ENV } from "../lib/env";
 
 const apiAny = anyApi as any;
-const internalAny = anyApi as any;
+// @ts-ignore
+const internal = require("./_generated/api").internal;
+const internalAny = internal as any;
 
 function bytesToBase64(bytes: Uint8Array): string {
   if (typeof btoa === "function") {
@@ -254,5 +256,12 @@ export const getTwilioWebhookSigningKeyByAccountSid = internalQuery({
       ciphertextBase64: user.twilioSubaccountAuthTokenCiphertext,
       ivBase64: user.twilioSubaccountAuthTokenIv,
     };
+  },
+});
+
+export const getUser = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.userId);
   },
 });
