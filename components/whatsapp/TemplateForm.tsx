@@ -19,9 +19,22 @@ import { WhatsAppPreview } from "./WhatsAppPreview";
 import { useAction, useMutation } from "convex/react";
 const api = require("@/convex/_generated/api").api;
 
+import enCommon from "@/public/locales/en/common.json";
+import esCommon from "@/public/locales/es/common.json";
+import ptCommon from "@/public/locales/pt/common.json";
+import frCommon from "@/public/locales/fr/common.json";
+
+const i18nCommon: Record<string, any> = {
+  en: enCommon.common,
+  es: esCommon.common,
+  pt: ptCommon.common,
+  fr: frCommon.common,
+};
+
 interface QuickReplyButton {
   id: string;
   text: string;
+  payload?: string;
 }
 
 interface TemplateData {
@@ -109,7 +122,7 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
       ...template,
       buttons: [
         ...template.buttons,
-        { id: crypto.randomUUID(), text: "" },
+        { id: crypto.randomUUID(), text: "", payload: "confirm" },
       ],
     });
   };
@@ -122,19 +135,12 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
     });
   };
 
-  // Update button text
-  const updateButtonText = (id: string, text: string) => {
-    if (text.length > 20) {
-      toast.error("Texto muy largo", {
-        description: "El texto del botón no puede superar 20 caracteres.",
-      });
-      return;
-    }
-
+  // Update button payload
+  const updateButtonPayload = (id: string, payload: string) => {
     setTemplate({
       ...template,
       buttons: template.buttons.map((btn) =>
-        btn.id === id ? { ...btn, text } : btn
+        btn.id === id ? { ...btn, payload } : btn
       ),
     });
   };
@@ -152,7 +158,7 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
           "twilio/quick-reply": {
             buttons: template.buttons.map((btn) => ({
               type: "quick_reply",
-              text: btn.text,
+              text: i18nCommon[template.language]?.[btn.payload || "confirm"] || btn.payload,
             })),
           },
         }),
@@ -195,8 +201,8 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
             // Usually Content API uses one type based on channel capability but here we define template structure.
             // The user example had BOTH types.
             actions: template.buttons.map((btn) => ({
-              title: btn.text,
-              id: btn.id,
+              title: i18nCommon[template.language]?.[btn.payload || "confirm"] || btn.payload,
+              id: btn.payload || btn.id,
             })),
           },
         }),
@@ -361,24 +367,43 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
             )}
 
             {template.buttons.map((button, index) => (
-              <div key={button.id} className="flex items-center gap-2">
-                <Badge variant="secondary" className="shrink-0">
-                  {index + 1}
-                </Badge>
-                <Input
-                  placeholder="Texto del botón (máx. 20 caracteres)"
-                  value={button.text}
-                  onChange={(e) => updateButtonText(button.id, e.target.value)}
-                  maxLength={20}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeButton(button.id)}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+              <div key={button.id} className="flex flex-col gap-2 p-3 border rounded-md">
+                <div className="flex items-center justify-between">
+                  <Badge variant="secondary">Botón {index + 1}</Badge>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeButton(button.id)}
+                    className="h-6 w-6"
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Acción (Texto visible)</Label>
+                    <Select
+                      value={button.payload || "confirm"}
+                      onValueChange={(val) => updateButtonPayload(button.id, val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona acción" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="confirm">{i18nCommon[template.language]?.confirm || "Confirmar"}</SelectItem>
+                        <SelectItem value="cancel">{i18nCommon[template.language]?.cancel || "Cancelar"}</SelectItem>
+                        <SelectItem value="reschedule">{i18nCommon[template.language]?.reschedule || "Reagendar"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Acción Estándar (Payload)</Label>
+                    <div className="flex h-9 w-full items-center rounded-md border border-input bg-muted px-3 py-1 text-sm shadow-sm opacity-70 cursor-not-allowed">
+                      {button.payload || "confirm"}
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -397,7 +422,10 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
             <CardTitle className="text-sm">Vista Previa</CardTitle>
           </CardHeader>
           <CardContent>
-            <WhatsAppPreview body={template.body} buttons={template.buttons} />
+            <WhatsAppPreview 
+              body={template.body} 
+              buttons={template.buttons.map(btn => ({ ...btn, text: i18nCommon[template.language]?.[btn.payload || "confirm"] || (btn.payload as string) }))} 
+            />
           </CardContent>
         </Card>
 

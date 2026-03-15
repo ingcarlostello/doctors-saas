@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useQuery, useMutation } from "convex/react";
 const api = require("@/convex/_generated/api").api;
 import { View, Views } from "react-big-calendar";
 import { CalendarEvent, CalendarStatus, UseCalendarViewResult } from "./google-calendar";
@@ -10,6 +10,7 @@ import { CalendarEvent, CalendarStatus, UseCalendarViewResult } from "./google-c
 export function useCalendarView(): UseCalendarViewResult {
     const listEvents = useAction(api.google_calendar.listEvents)
     const getAuthUrl = useAction(api.google_calendar.getAuthUrl);
+    const disconnect = useMutation(api.google_calendar.disconnect);
 
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [status, setStatus] = useState<CalendarStatus>("loading");
@@ -78,6 +79,20 @@ export function useCalendarView(): UseCalendarViewResult {
         }
     }, [getAuthUrl]);
 
+    const handleDisconnect = useCallback(async () => {
+        if (!window.confirm("Are you sure you want to disconnect your Google Calendar?")) {
+            return;
+        }
+        try {
+            await disconnect();
+            setStatus("disconnected");
+            setEvents([]);
+        } catch (error) {
+            console.error("Failed to disconnect:", error);
+            alert("Failed to disconnect Google Calendar");
+        }
+    }, [disconnect]);
+
     const onNavigate = useCallback((newDate: Date) => {
         setDate(newDate);
     }, []);
@@ -107,6 +122,7 @@ export function useCalendarView(): UseCalendarViewResult {
         selectedEvent,
         loadEvents,
         handleConnect,
+        handleDisconnect,
         onNavigate,
         onView,
         handleSelectEvent,

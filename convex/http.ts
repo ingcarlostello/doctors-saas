@@ -195,7 +195,7 @@ const twilioInbound = httpAction(async (ctx, request) => {
 
   const toRaw = params.To ?? "";
   const fromRaw = params.From ?? "";
-  const body = params.Body ?? "";
+  const body = params.ButtonPayload ?? params.Body ?? "";
 
   const assignedNumber = normalizeE164PhoneNumber(toRaw);
   const fromPhone = normalizeE164PhoneNumber(fromRaw);

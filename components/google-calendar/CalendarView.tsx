@@ -5,7 +5,7 @@ import { format, parse, startOfWeek, getDay } from 'date-fns'
 import { enUS } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, Calendar as CalendarIcon } from "lucide-react";
+import { RefreshCcw, Calendar as CalendarIcon, LogOut } from "lucide-react";
 import { CreateEventDialog } from "./CreateEventDialog";
 import { EventDetailsDialog } from "./EventDetailsDialog";
 import { useCalendarView } from "./useCalendarView";
@@ -36,6 +36,7 @@ export function CalendarView() {
         handleSelectEvent,
         closeSelectedEvent,
         handleEventDeleted,
+        handleDisconnect,
     } = useCalendarView();
 
     if (status === "loading") {
@@ -84,6 +85,10 @@ export function CalendarView() {
                     <CreateEventDialog onEventCreated={() => loadEvents()} />
                     <Button variant="outline" onClick={() => window.open('https://calendar.google.com', '_blank')}>
                         Open in Google Calendar
+                    </Button>
+                    <Button variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={handleDisconnect} title="Disconnect Google Calendar">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Disconnect
                     </Button>
                 </div>
             </div>
