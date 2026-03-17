@@ -8,67 +8,12 @@ import {
   query,
 } from "./_generated/server";
 import { ENV } from "../lib/env";
+import { encryptWithAesGcmBase64 } from "./utils/crypto";
 
 const apiAny = anyApi as any;
 // @ts-ignore
 const internal = require("./_generated/api").internal;
 const internalAny = internal as any;
-
-function bytesToBase64(bytes: Uint8Array): string {
-  if (typeof btoa === "function") {
-    let binary = "";
-    for (const b of bytes) binary += String.fromCharCode(b);
-    return btoa(binary);
-  }
-  const BufferImpl = (globalThis as unknown as { Buffer?: typeof Buffer }).Buffer;
-  if (BufferImpl) return BufferImpl.from(bytes).toString("base64");
-  throw new Error("No hay encoder base64 disponible en este runtime");
-}
-
-function base64ToBytes(base64: string): Uint8Array {
-  if (typeof atob === "function") {
-    const bin = atob(base64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return bytes;
-  }
-  const BufferImpl = (globalThis as unknown as { Buffer?: typeof Buffer }).Buffer;
-  if (BufferImpl) return new Uint8Array(BufferImpl.from(base64, "base64"));
-  throw new Error("No hay decoder base64 disponible en este runtime");
-}
-
-async function importAesGcmKeyFromBase64(masterKeyBase64: string): Promise<CryptoKey> {
-  const raw = base64ToBytes(masterKeyBase64);
-  const rawBuffer = raw.buffer.slice(
-    raw.byteOffset,
-    raw.byteOffset + raw.byteLength,
-  ) as ArrayBuffer;
-  return await crypto.subtle.importKey(
-    "raw",
-    rawBuffer,
-    { name: "AES-GCM" },
-    false,
-    ["encrypt", "decrypt"],
-  );
-}
-
-async function encryptWithAesGcmBase64(opts: {
-  masterKeyBase64: string;
-  plaintext: string;
-}): Promise<{ ciphertextBase64: string; ivBase64: string }> {
-  const key = await importAesGcmKeyFromBase64(opts.masterKeyBase64);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const enc = new TextEncoder();
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    enc.encode(opts.plaintext),
-  );
-  return {
-    ciphertextBase64: bytesToBase64(new Uint8Array(ciphertext)),
-    ivBase64: bytesToBase64(iv),
-  };
-}
 
 export const store = mutation({
   args: {},

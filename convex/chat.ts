@@ -237,40 +237,7 @@ export const softDeleteMessage = mutation({
   },
 });
 
-export const heartbeatPresence = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await ensureCurrentUserId(ctx);
-    const now = Date.now();
 
-    const existing = await ctx.db
-      .query("presence")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .unique();
-
-    if (existing) {
-      await ctx.db.patch(existing._id, { lastSeenAt: now, isOnline: true });
-      return;
-    }
-
-    await ctx.db.insert("presence", { userId, lastSeenAt: now, isOnline: true });
-  },
-});
-
-export const getPresence = query({
-  args: { userId: v.id("users") },
-  handler: async (ctx, args) => {
-    const presence = await ctx.db
-      .query("presence")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .unique();
-    if (!presence) return null;
-
-    const now = Date.now();
-    const isOnline = now - presence.lastSeenAt <= 30_000;
-    return { ...presence, isOnline };
-  },
-});
 
 export const getConversationContext = query({
   args: {

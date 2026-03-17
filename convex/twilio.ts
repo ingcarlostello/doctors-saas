@@ -4,6 +4,7 @@ import { TWILIO_CONFIG } from "../lib/config";
 import { ENV } from "../lib/env";
 import type { TwilioIncomingPhoneNumber } from "../interfaces/convex/twilio";
 import { v } from "convex/values";
+import { decryptWithAesGcmBase64 } from "./utils/crypto";
 
 type TwilioMappedPhoneNumber = {
   sid: string;
@@ -22,52 +23,6 @@ type AssignNumberArgs = {
 };
 
 const apiAny = anyApi as any;
-
-// Crypto Helpers (duplicated from users.ts for now)
-function base64ToBytes(base64: string): Uint8Array {
-  if (typeof atob === "function") {
-    const bin = atob(base64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return bytes;
-  }
-  const BufferImpl = (globalThis as unknown as { Buffer?: typeof Buffer }).Buffer;
-  if (BufferImpl) return new Uint8Array(BufferImpl.from(base64, "base64"));
-  throw new Error("No hay decoder base64 disponible en este runtime");
-}
-
-async function importAesGcmKeyFromBase64(masterKeyBase64: string): Promise<CryptoKey> {
-  const raw = base64ToBytes(masterKeyBase64);
-  const rawBuffer = raw.buffer.slice(
-    raw.byteOffset,
-    raw.byteOffset + raw.byteLength,
-  ) as ArrayBuffer;
-  return await crypto.subtle.importKey(
-    "raw",
-    rawBuffer,
-    { name: "AES-GCM" },
-    false,
-    ["encrypt", "decrypt"],
-  );
-}
-
-async function decryptWithAesGcmBase64(opts: {
-  masterKeyBase64: string;
-  ciphertextBase64: string;
-  ivBase64: string;
-}): Promise<string> {
-  const key = await importAesGcmKeyFromBase64(opts.masterKeyBase64);
-  const iv = base64ToBytes(opts.ivBase64);
-  const ciphertext = base64ToBytes(opts.ciphertextBase64);
-
-  const decryptedBuffer = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: iv as unknown as BufferSource },
-    key,
-    ciphertext as unknown as BufferSource,
-  );
-
-  return new TextDecoder().decode(decryptedBuffer);
-}
 
 async function getSubaccountAuthHeader(ctx: any): Promise<string> {
   const currentUser = await ctx.runQuery(apiAny.users.currentUser, {});
@@ -440,6 +395,7 @@ export const createContentTemplate = action({
   args: {
     friendly_name: v.string(),
     language: v.string(),
+    category: v.string(),
     variables: v.any(),
     types: v.any(),
   },
@@ -451,28 +407,72 @@ export const createContentTemplate = action({
     const friendlyName = sanitizeTemplateName(args.friendly_name);
     validateTemplateName(friendlyName);
 
-    const url = `https://content.twilio.com/v1/Content`;
+    const categoryLower = args.category.toLowerCase();
 
-    const response = await fetch(url, {
+    // Create Content Resource (category included for automatic WhatsApp approval)
+    const createUrl = `https://content.twilio.com/v1/Content`;
+
+    const createPayload = {
+      friendly_name: friendlyName,
+      language: args.language,
+      category: categoryLower,
+      variables: args.variables,
+      types: args.types,
+    };
+
+    console.log("=== PAYLOAD TO TWILIO POST /v1/Content ===");
+    console.log(JSON.stringify(createPayload, null, 2));
+
+    const createResponse = await fetch(createUrl, {
       method: "POST",
       headers: {
         Authorization: authHeader,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        friendly_name: friendlyName,
-        language: args.language,
-        variables: args.variables,
-        types: args.types,
-      }),
+      body: JSON.stringify(createPayload),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text();
       throw new Error(`Error creando template en Twilio: ${errorText}`);
     }
 
-    return await response.json();
+    const contentData = await createResponse.json();
+    console.log("Template creado exitosamente:", JSON.stringify(contentData, null, 2));
+
+    // Step 2: Verify auto-approval status with a GET request
+    const contentSid = contentData.sid;
+    const getUrl = `https://content.twilio.com/v1/Content/${contentSid}`;
+
+    try {
+      const getResponse = await fetch(getUrl, {
+        method: "GET",
+        headers: {
+          Authorization: authHeader,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!getResponse.ok) {
+        const getError = await getResponse.text();
+        console.error("Error verificando estatus del template:", getError);
+        return {
+          ...contentData,
+          approvalError: getError,
+        };
+      }
+
+      const verifiedData = await getResponse.json();
+      console.log("Status del template:", JSON.stringify(verifiedData.approval_requests, null, 2));
+
+      return verifiedData;
+    } catch (err: any) {
+      console.error("Excepción verificando estatus:", err);
+      return {
+        ...contentData,
+        approvalError: err.message,
+      };
+    }
   },
 });
 

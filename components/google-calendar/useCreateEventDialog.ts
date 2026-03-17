@@ -18,6 +18,11 @@ export function useCreateEventDialog({ onEventCreated }: { onEventCreated?: () =
     const [patientSearch, setPatientSearch] = useState("");
     const [isPatientListOpen, setIsPatientListOpen] = useState(false);
 
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+
+
+
     const createEvent = useAction(api.google_calendar.createEvent);
     const patientsQuery = useQuery(api.patients.list);
     const patients = (patientsQuery || []) as Patient[];
@@ -45,16 +50,16 @@ export function useCreateEventDialog({ onEventCreated }: { onEventCreated?: () =
 
     async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
+        if (!startDate || !endDate) return;
+
         setLoading(true);
         const formData = new FormData(e.currentTarget);
         const title = formData.get("title") as string;
         const description = formData.get("description") as string;
-        const start = formData.get("start") as string;
-        const end = formData.get("end") as string;
 
         try {
-            const startTime = new Date(start).getTime();
-            let endTime = new Date(end).getTime();
+            const startTime = startDate.getTime();
+            let endTime = endDate.getTime();
 
             if (endTime <= startTime) {
                 // If user selects same or earlier end time, default to +30m
@@ -99,5 +104,9 @@ export function useCreateEventDialog({ onEventCreated }: { onEventCreated?: () =
         setIsPatientListOpen,
         filteredPatients,
         handlePatientSelect,
+        startDate,
+        setStartDate,
+        endDate,
+        setEndDate,
     };
 }

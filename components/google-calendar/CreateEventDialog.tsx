@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useCreateEventDialog } from "@/components/google-calendar/useCreateEventDialog";
 import { cn } from "@/lib/utils";
 import { useNamespace } from "@/components/TranslationProvider";
@@ -21,7 +22,7 @@ export function CreateEventDialog({
 }: {
   onEventCreated?: () => void;
 }) {
-    const { t } = useNamespace("calendar");
+  const { t } = useNamespace("calendar");
   const {
     filteredPatients,
     handlePatientSelect,
@@ -34,6 +35,10 @@ export function CreateEventDialog({
     setIsPatientListOpen,
     setOpen,
     setPatientSearch,
+    startDate,
+    setStartDate,
+    endDate,
+    setEndDate,
   } = useCreateEventDialog({ onEventCreated });
 
   return (
@@ -63,6 +68,7 @@ export function CreateEventDialog({
               placeholder={t.dialog.descriptionPlaceholder}
             />
           </div>
+
           <div className="space-y-2">
             <div>
               <div className="grid gap-2">
@@ -74,7 +80,9 @@ export function CreateEventDialog({
                     value={patientSearch}
                     onChange={(event) => setPatientSearch(event.target.value)}
                     className="pr-10"
+                    autoComplete="off"
                   />
+
                   <button
                     type="button"
                     onClick={() => setIsPatientListOpen((prev) => !prev)}
@@ -83,7 +91,7 @@ export function CreateEventDialog({
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 transition-transform duration-200",
-                        isPatientListOpen && "rotate-180"
+                        isPatientListOpen && "rotate-180",
                       )}
                     />
                   </button>
@@ -94,7 +102,7 @@ export function CreateEventDialog({
                   "grid transition-all duration-300 ease-in-out",
                   isPatientListOpen
                     ? "grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0"
+                    : "grid-rows-[0fr] opacity-0",
                 )}
               >
                 <div className="overflow-hidden">
@@ -116,13 +124,16 @@ export function CreateEventDialog({
                               }}
                               className={cn(
                                 "flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground",
-                                patientId === patient._id && patientSearch.trim() !== "" && "bg-accent"
+                                patientId === patient._id &&
+                                  patientSearch.trim() !== "" &&
+                                  "bg-accent",
                               )}
                             >
                               <span>{patient.fullName}</span>
-                              {patientId === patient._id && patientSearch.trim() !== "" && (
-                                <Check className="h-4 w-4" />
-                              )}
+                              {patientId === patient._id &&
+                                patientSearch.trim() !== "" && (
+                                  <Check className="h-4 w-4" />
+                                )}
                             </button>
                           </li>
                         ))}
@@ -131,17 +142,46 @@ export function CreateEventDialog({
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="start">{t.dialog.startTimeLabel}</Label>
-              <Input id="start" name="start" type="datetime-local" required />
+              <Label>{t.dialog.startTimeLabel}</Label>
+              <DateTimePicker
+                date={startDate}
+                setDate={setStartDate}
+                disabledDates={(date) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  return date < today;
+                }}
+                minTime={new Date()} // Restrict time if today
+              />
+              <input
+                type="hidden"
+                name="start"
+                value={startDate?.toISOString() || ""}
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="end">{t.dialog.endTimeLabel}</Label>
-              <Input id="end" name="end" type="datetime-local" required />
+              <Label>{t.dialog.endTimeLabel}</Label>
+              <DateTimePicker
+                date={endDate}
+                setDate={setEndDate}
+                disabledDates={(date) => {
+                  if (!startDate) return false;
+                  const startDay = new Date(startDate);
+                  startDay.setHours(0, 0, 0, 0);
+                  return date < startDay;
+                }}
+                minTime={startDate} // Restrict time if same day
+                minTimeExclusive={true}
+              />
+              <input
+                type="hidden"
+                name="end"
+                value={endDate?.toISOString() || ""}
+              />
             </div>
           </div>
           <div className="flex justify-end pt-4">

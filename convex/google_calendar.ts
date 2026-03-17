@@ -1,3 +1,4 @@
+import { mutation } from "./_generated/server";
 import {
   createEvent as createEventImpl,
   deleteEvent as deleteEventImpl,
@@ -49,3 +50,25 @@ export const getTokensInternal = getTokensInternalImpl;
 export const getEventById = getEventByIdImpl;
 export const getEventByGoogleId = getEventByGoogleIdImpl;
 export const getEventByGoogleIdInternal = getEventByGoogleIdInternalImpl;
+
+export const disconnect = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+      .unique();
+    if (!user) throw new Error("User not found");
+
+    const existingToken = await ctx.db
+      .query("google_calendar_tokens")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .unique();
+
+    if (existingToken) {
+      await ctx.db.delete(existingToken._id);
+    }
+  },
+});
