@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,239 +13,27 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, MessageSquare, Info } from "lucide-react";
-import { toast } from "sonner";
 import { WhatsAppPreview } from "./WhatsAppPreview";
-import { useAction, useMutation } from "convex/react";
-const api = require("@/convex/_generated/api").api;
 
-import enCommon from "@/public/locales/en/common.json";
-import esCommon from "@/public/locales/es/common.json";
-import ptCommon from "@/public/locales/pt/common.json";
-import frCommon from "@/public/locales/fr/common.json";
-
-const i18nCommon: Record<string, any> = {
-  en: enCommon.common,
-  es: esCommon.common,
-  pt: ptCommon.common,
-  fr: frCommon.common,
-};
-
-interface QuickReplyButton {
-  id: string;
-  text: string;
-  payload?: string;
-}
-
-interface TemplateData {
-  friendlyName: string;
-  templateName: string;
-  category: string;
-  language: string;
-  body: string;
-  buttons: QuickReplyButton[];
-}
-
-const categories = [
-  { value: "UTILITY", label: "Utilidad (Citas, Recordatorios)" },
-  { value: "MARKETING", label: "Marketing" },
-  { value: "AUTHENTICATION", label: "Autenticación" },
-];
-
-const languages = [
-  { value: "es", label: "Español" },
-  { value: "en", label: "English" },
-  { value: "pt", label: "Português" },
-];
-
-interface TemplateFormProps {
-  onSuccess?: () => void;
-}
+import { useTemplateForm } from "./hooks/useTemplateForm";
+import { TemplateFormProps } from "./types/template.types";
+import { categories, languages, i18nCommon } from "./constants/template.constants";
 
 export function TemplateForm({ onSuccess }: TemplateFormProps) {
-  const createContentTemplate = useAction(api.twilio.createContentTemplate);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [template, setTemplate] = useState<TemplateData>({
-    friendlyName: "",
-    templateName: "",
-    category: "",
-    language: "es",
-    body: "",
-    buttons: [],
-  });
-
-  const [variableCount, setVariableCount] = useState(0);
-
-  // Convert friendly name to template name (lowercase, underscores)
-  const handleFriendlyNameChange = (value: string) => {
-    const templateName = value
-      .toLowerCase()
-      .replace(/\s+/g, "_")
-      .replace(/[^a-z0-9_]/g, "");
-
-    setTemplate({
-      ...template,
-      friendlyName: value,
-      templateName,
-    });
-  };
-
-  // Count variables in body
-  const handleBodyChange = (value: string) => {
-    const matches = value.match(/\{\{\d+\}\}/g) || [];
-    const uniqueVars = new Set(matches);
-    setVariableCount(uniqueVars.size);
-    setTemplate({ ...template, body: value });
-  };
-
-  // Add variable to body at cursor position
-  const addVariable = () => {
-    const newVarNum = variableCount + 1;
-    setTemplate({
-      ...template,
-      body: template.body + `{{${newVarNum}}}`,
-    });
-    setVariableCount(newVarNum);
-  };
-
-  // Add button
-  const addButton = () => {
-    if (template.buttons.length >= 3) {
-      toast.error("Límite alcanzado", {
-        description: "Solo puedes agregar hasta 3 botones de respuesta rápida.",
-      });
-      return;
-    }
-
-    setTemplate({
-      ...template,
-      buttons: [
-        ...template.buttons,
-        { id: crypto.randomUUID(), text: "", payload: "confirm" },
-      ],
-    });
-  };
-
-  // Remove button
-  const removeButton = (id: string) => {
-    setTemplate({
-      ...template,
-      buttons: template.buttons.filter((btn) => btn.id !== id),
-    });
-  };
-
-  // Update button payload
-  const updateButtonPayload = (id: string, payload: string) => {
-    setTemplate({
-      ...template,
-      buttons: template.buttons.map((btn) =>
-        btn.id === id ? { ...btn, payload } : btn
-      ),
-    });
-  };
-
-  // Generate JSON output
-  const generateJSON = () => {
-    const output = {
-      friendly_name: template.friendlyName,
-      language: template.language,
-      types: {
-        "twilio/text": {
-          body: template.body,
-        },
-        ...(template.buttons.length > 0 && {
-          "twilio/quick-reply": {
-            buttons: template.buttons.map((btn) => ({
-              type: "quick_reply",
-              text: i18nCommon[template.language]?.[btn.payload || "confirm"] || btn.payload,
-            })),
-          },
-        }),
-      },
-    };
-    return JSON.stringify(output, null, 2);
-  };
-
-  // Handle form submission
-  const handleSubmit = async () => {
-    if (!template.friendlyName || !template.category || !template.body) {
-      toast.error("Campos requeridos", {
-        description: "Por favor completa todos los campos obligatorios.",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // 1. Create in Twilio
-      const twilioVariables: Record<string, string> = {};
-      const matches = template.body.match(/\{\{\d+\}\}/g) || [];
-      const uniqueVars = new Set(matches);
-      uniqueVars.forEach((v) => {
-        const num = v.replace(/[{}]/g, "");
-        twilioVariables[num] = "val"; // Placeholder as requested by API structure usually
-      });
-
-      const types = {
-        "twilio/text": {
-          body: template.body,
-        },
-        ...(template.buttons.length > 0 && {
-          "twilio/quick-reply": {
-            body: template.body, // Quick reply expects body inside too? Check API docs logic. 
-            // Wait, standard structure: types: { "twilio/text": { ... }, "twilio/quick-reply": { ... } } ?
-            // User provided example: types: { "twilio/quick-reply": { body: "...", actions: [...] }, "twilio/text": { body: "..." } }
-            // So if buttons exist, we might need both or just quick-reply. 
-            // Usually Content API uses one type based on channel capability but here we define template structure.
-            // The user example had BOTH types.
-            actions: template.buttons.map((btn) => ({
-              title: i18nCommon[template.language]?.[btn.payload || "confirm"] || btn.payload,
-              id: btn.payload || btn.id,
-            })),
-          },
-        }),
-      };
-
-      // If we have buttons, the user example shows sending BOTH text and quick-reply types.
-      // But actually, for a single template, we usually define the content types available.
-      // Let's stick to the generated JSON logic the user liked/provided, but ensure we pass it correctly.
-
-      const contentVariables = {};
-      // api expects "variables": {"1":"nombre"} mapping.
-      // template has body "Hola {{1}}".
-      // We should pass the definition of variables.
-      const variablesDefinition: Record<string, string> = {};
-      uniqueVars.forEach((v) => {
-        const num = v.replace(/[{}]/g, "");
-        variablesDefinition[num] = "custom_variable"; // or friendly name
-      });
-
-      const twilioResult = await createContentTemplate({
-        friendly_name: template.friendlyName,
-        language: template.language,
-        variables: variablesDefinition,
-        types: types,
-      });
-
-      console.log("Twilio Result:", twilioResult);
-
-      toast.success("Plantilla creada", {
-        description: "La plantilla ha sido enviada a Twilio exitosamente.",
-      });
-
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error: any) {
-      console.error(error);
-      toast.error("Error al crear plantilla", {
-        description: error.message || "Ocurrió un error inesperado.",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    template,
+    setTemplate,
+    variableCount,
+    isSubmitting,
+    handleFriendlyNameChange,
+    handleBodyChange,
+    addVariable,
+    updateVariableSample,
+    addButton,
+    removeButton,
+    updateButtonPayload,
+    handleSubmit,
+  } = useTemplateForm({ onSuccess });
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -344,6 +131,35 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
             </div>
           </div>
 
+          {/* Variable Samples */}
+          {Object.keys(template.variableSamples).length > 0 && (
+            <div className="space-y-3 mt-4 p-4 border rounded-md bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Info className="w-4 h-4 text-primary" />
+                <Label className="text-sm font-semibold">Ejemplos para Variables (Obligatorio)</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                WhatsApp requiere que proporciones un ejemplo realista para cada variable (ej. "Juan Pérez", "15:30", "Clínica Sur"). 
+                No uses nombres de variables como "nombre_paciente".
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                {Object.entries(template.variableSamples).map(([key, value]) => (
+                  <div key={key} className="space-y-1">
+                    <Label htmlFor={`sample-${key}`} className="text-xs font-medium">Muestra para {"{{"}{key}{"}}"} *</Label>
+                    <Input
+                      id={`sample-${key}`}
+                      placeholder={`Ejemplo realista para {{${key}}}`}
+                      value={value}
+                      onChange={(e) => updateVariableSample(key, e.target.value)}
+                      className="h-8 text-sm bg-background"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Buttons */}
           <div className="space-y-3 mt-8">
             <div className="flex items-center justify-between">
@@ -367,7 +183,10 @@ export function TemplateForm({ onSuccess }: TemplateFormProps) {
             )}
 
             {template.buttons.map((button, index) => (
-              <div key={button.id} className="flex flex-col gap-2 p-3 border rounded-md">
+              <div
+                key={button.id}
+                className="flex flex-col gap-2 p-3 border rounded-md"
+              >
                 <div className="flex items-center justify-between">
                   <Badge variant="secondary">Botón {index + 1}</Badge>
                   <Button

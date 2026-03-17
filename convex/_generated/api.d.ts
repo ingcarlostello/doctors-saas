@@ -24,9 +24,11 @@ import type * as http from "../http.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as notifications from "../notifications.js";
 import type * as patients from "../patients.js";
+import type * as presence from "../presence.js";
 import type * as templates from "../templates.js";
 import type * as twilio from "../twilio.js";
 import type * as users from "../users.js";
+import type * as utils_crypto from "../utils/crypto.js";
 
 import type {
   ApiFromModules,
@@ -51,9 +53,11 @@ declare const fullApi: ApiFromModules<{
   myFunctions: typeof myFunctions;
   notifications: typeof notifications;
   patients: typeof patients;
+  presence: typeof presence;
   templates: typeof templates;
   twilio: typeof twilio;
   users: typeof users;
+  "utils/crypto": typeof utils_crypto;
 }>;
 
 /**

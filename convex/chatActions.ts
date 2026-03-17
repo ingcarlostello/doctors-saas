@@ -19,6 +19,52 @@ const apiAny = anyApi as any;
 const internal = require("./_generated/api").internal;
 const internalAny = internal as any;
 
+async function sendToTwilio(opts: {
+  accountSid: string;
+  authToken: string;
+  subaccountSid: string;
+  from: string;
+  to: string;
+  contentSid?: string;
+  contentVariables?: string;
+  content?: string;
+  attachments?: AttachmentInput[];
+}): Promise<{ ok: true; sid: string | null; status: string } | { ok: false; httpStatus: number; errorText: string }> {
+  const url = `https://${opts.accountSid}:${opts.authToken}@${TWILIO_CONFIG.BASE_URL}/Accounts/${opts.subaccountSid}/Messages.json`;
+
+  const body = new URLSearchParams();
+  body.set("From", opts.from);
+  body.set("To", opts.to);
+
+  if (opts.contentSid) {
+    body.set("ContentSid", opts.contentSid);
+    if (opts.contentVariables) {
+      body.set("ContentVariables", opts.contentVariables);
+    }
+  } else if (opts.content && opts.content.length > 0) {
+    body.set("Body", opts.content);
+  }
+
+  if (opts.attachments) {
+    for (const attachment of opts.attachments) {
+      if (attachment.url) body.append("MediaUrl", attachment.url);
+    }
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  if (!response.ok) {
+    return { ok: false, httpStatus: response.status, errorText: await response.text() };
+  }
+
+  const data = (await response.json()) as { sid?: string; status?: string };
+  return { ok: true, sid: data.sid ?? null, status: data.status ?? "sent" };
+}
+
 export const sendWhatsAppMessage: ReturnType<typeof action> = action({
   args: {
     conversationId: v.id("conversations"),
@@ -112,49 +158,31 @@ export const sendWhatsAppMessage: ReturnType<typeof action> = action({
       },
     );
 
-    const url = `https://${accountSid}:${authToken}@${TWILIO_CONFIG.BASE_URL}/Accounts/${user.twilioSubaccountSid}/Messages.json`;
-
-    const body = new URLSearchParams();
-    body.set("From", from);
-    body.set("To", to);
-
-    if (args.contentSid) {
-      body.set("ContentSid", args.contentSid);
-      if (args.contentVariables) {
-        body.set("ContentVariables", args.contentVariables);
-      }
-    } else {
-      if (content.length > 0) body.set("Body", content);
-    }
-
-    for (const attachment of attachments) {
-      if (attachment.url) body.append("MediaUrl", attachment.url);
-    }
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body,
+    const twilioResponse = await sendToTwilio({
+      accountSid,
+      authToken,
+      subaccountSid: user.twilioSubaccountSid,
+      from,
+      to,
+      contentSid: args.contentSid,
+      contentVariables: args.contentVariables,
+      content,
+      attachments,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!twilioResponse.ok) {
       await ctx.runMutation(internalAny.chatInternal.updateSendFailure, {
         messageDocId,
-        twilioStatus: `http_${response.status}`,
+        twilioStatus: `http_${twilioResponse.httpStatus}`,
       });
-      throw new Error(`No se pudo enviar el mensaje por Twilio: ${errorText}`);
+      throw new Error(`No se pudo enviar el mensaje por Twilio: ${twilioResponse.errorText}`);
     }
-
-    const data = (await response.json()) as { sid?: string; status?: string };
-    const sid = data.sid ?? null;
-    const twilioStatus = data.status ?? "sent";
 
     await ctx.runMutation(internalAny.chatInternal.updateAfterSend, {
       messageDocId,
-      twilioMessageSid: sid ?? undefined,
-      twilioStatus,
-      whatsappMessageId: sid ?? undefined,
+      twilioMessageSid: twilioResponse.sid ?? undefined,
+      twilioStatus: twilioResponse.status,
+      whatsappMessageId: twilioResponse.sid ?? undefined,
     });
 
     await ctx.runMutation(internalAny.chatInternal.touchConversationAfterSend, {
@@ -235,45 +263,30 @@ export const sendWhatsAppMessageInternal = internalAction({
     );
 
     // 4. Send via Twilio
-    const url = `https://${accountSid}:${authToken}@${TWILIO_CONFIG.BASE_URL}/Accounts/${user.twilioSubaccountSid}/Messages.json`;
-
-    const body = new URLSearchParams();
-    body.set("From", from);
-    body.set("To", to);
-
-    if (args.contentSid) {
-      body.set("ContentSid", args.contentSid);
-      if (args.contentVariables) {
-        body.set("ContentVariables", args.contentVariables);
-      }
-    } else {
-      if (content.length > 0) body.set("Body", content);
-    }
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body,
+    const twilioResponse = await sendToTwilio({
+      accountSid,
+      authToken,
+      subaccountSid: user.twilioSubaccountSid,
+      from,
+      to,
+      contentSid: args.contentSid,
+      contentVariables: args.contentVariables,
+      content,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!twilioResponse.ok) {
       await ctx.runMutation(internalAny.chatInternal.updateSendFailure, {
         messageDocId,
-        twilioStatus: `http_${response.status}`,
+        twilioStatus: `http_${twilioResponse.httpStatus}`,
       });
-      throw new Error(`No se pudo enviar el mensaje por Twilio: ${errorText}`);
+      throw new Error(`No se pudo enviar el mensaje por Twilio: ${twilioResponse.errorText}`);
     }
-
-    const data = (await response.json()) as { sid?: string; status?: string };
-    const sid = data.sid ?? null;
-    const twilioStatus = data.status ?? "sent";
 
     await ctx.runMutation(internalAny.chatInternal.updateAfterSend, {
       messageDocId,
-      twilioMessageSid: sid ?? undefined,
-      twilioStatus,
-      whatsappMessageId: sid ?? undefined,
+      twilioMessageSid: twilioResponse.sid ?? undefined,
+      twilioStatus: twilioResponse.status,
+      whatsappMessageId: twilioResponse.sid ?? undefined,
     });
 
     await ctx.runMutation(internalAny.chatInternal.touchConversationAfterSendSystem, {
