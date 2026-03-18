@@ -10,7 +10,8 @@
         "login": "Connexion",
         "signUp": "S'inscrire",
         "getStarted": "Commencer",
-        "logout": "Déconnexion"
+        "logout": "Déconnexion",
+        "admin": "Admin"
     },
     "common": {
         "loading": "Chargement...",
