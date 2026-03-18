@@ -10,7 +10,8 @@
         "login": "Iniciar Sesión",
         "signUp": "Registrarse",
         "getStarted": "Comenzar",
-        "logout": "Cerrar Sesión"
+        "logout": "Cerrar Sesión",
+        "admin": "Administración"
     },
     "common": {
         "loading": "Cargando...",

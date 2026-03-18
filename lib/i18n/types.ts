@@ -13,6 +13,7 @@ export interface CommonDictionary {
         signUp: string;
         getStarted: string;
         logout: string;
+        admin: string;
     };
     common: {
         loading: string;

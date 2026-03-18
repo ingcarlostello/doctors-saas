@@ -10,7 +10,8 @@
         "login": "Login",
         "signUp": "Sign Up",
         "getStarted": "Get Started",
-        "logout": "Logout"
+        "logout": "Logout",
+        "admin": "Admin"
     },
     "common": {
         "loading": "Loading...",

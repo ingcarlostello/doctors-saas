@@ -3,10 +3,11 @@
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Users, Megaphone, X, MessagesSquare, Settings, FileCheck, LayoutDashboard } from "lucide-react"
+import { Calendar, Users, Megaphone, X, MessagesSquare, Settings, FileCheck, LayoutDashboard, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useQuery } from "convex/react"
+import { useUser } from "@clerk/nextjs"
 const api = require("@/convex/_generated/api").api;
 import { useNamespace } from "@/components/TranslationProvider"
 import { getLocaleFromPath } from "@/lib/i18n"
@@ -29,6 +30,9 @@ export function Sidebar({ onClose }: SidebarProps) {
   const locale = getLocaleFromPath(pathname)
   const conversations = useQuery(api.chat.listConversations, {})
   const hasUnreadMessages = (conversations ?? []).some((c: any) => (c.unreadCount ?? 0) > 0)
+  const { user } = useUser()
+  const email = user?.primaryEmailAddress?.emailAddress
+  const isAdmin = useQuery(api.admin.isAdmin, email ? { email } : "skip")
 
   const { t: commonT } = useNamespace("common")
   const { t: dashboardT } = useNamespace("dashboard")
@@ -42,6 +46,10 @@ export function Sidebar({ onClose }: SidebarProps) {
     { name: commonT.navigation.chat, href: `/${locale}/chat`, icon: MessagesSquare },
     { name: commonT.navigation.settings, href: `/${locale}/settings`, icon: Settings },
   ]
+
+  if (isAdmin) {
+    navigation.push({ name: commonT.navigation.admin || "Admin", href: `/${locale}/admin`, icon: Shield })
+  }
 
   return (
     <div className="flex h-full flex-col border-r border-border bg-card">

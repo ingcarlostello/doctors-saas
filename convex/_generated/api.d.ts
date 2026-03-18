@@ -13,6 +13,7 @@ import type * as _google_calendar_google_calendar_helpers from "../_google_calen
 import type * as _google_calendar_google_calendar_mutations from "../_google_calendar/google_calendar_mutations.js";
 import type * as _google_calendar_google_calendar_queries from "../_google_calendar/google_calendar_queries.js";
 import type * as _google_calendar_index from "../_google_calendar/index.js";
+import type * as admin from "../admin.js";
 import type * as chat from "../chat.js";
 import type * as chatActions from "../chatActions.js";
 import type * as chatConfig from "../chatConfig.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   "_google_calendar/google_calendar_mutations": typeof _google_calendar_google_calendar_mutations;
   "_google_calendar/google_calendar_queries": typeof _google_calendar_google_calendar_queries;
   "_google_calendar/index": typeof _google_calendar_index;
+  admin: typeof admin;
   chat: typeof chat;
   chatActions: typeof chatActions;
   chatConfig: typeof chatConfig;

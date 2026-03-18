@@ -10,7 +10,8 @@
         "login": "Entrar",
         "signUp": "Cadastrar",
         "getStarted": "Começar",
-        "logout": "Sair"
+        "logout": "Sair",
+        "admin": "Admin"
     },
     "common": {
         "loading": "Carregando...",
