@@ -76,3 +76,15 @@ export const listTemplates = query({
         return [];
     },
 });
+
+// ─── Public: Get global templates (for non-admin users) ───
+export const getGlobalTemplates = query({
+    args: {},
+    handler: async (ctx) => {
+        const templates = await ctx.db
+            .query("templates")
+            .filter((q) => q.eq(q.field("status"), "approved"))
+            .collect();
+        return templates;
+    },
+});
