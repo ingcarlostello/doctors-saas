@@ -5,9 +5,10 @@ interface TemplateListProps {
   isAdmin?: boolean;
   isApprovalView?: boolean;
   isCatalogView?: boolean;
+  onUseTemplate?: (template: Template) => Promise<void>;
 }
 
-export function TemplateList({ templates, isAdmin = false, isApprovalView = false, isCatalogView = false }: TemplateListProps) {
+export function TemplateList({ templates, isAdmin = false, isApprovalView = false, isCatalogView = false, onUseTemplate }: TemplateListProps) {
   if (templates.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -26,6 +27,7 @@ export function TemplateList({ templates, isAdmin = false, isApprovalView = fals
           isAdmin={isAdmin} 
           isApprovalView={isApprovalView}
           isCatalogView={isCatalogView}
+          onUseTemplate={onUseTemplate}
         />
       ))}
     </div>

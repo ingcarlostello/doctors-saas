@@ -1,29 +1,23 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Trash2, Calendar, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TemplateListItemProps } from "./types/template.types";
 
-export interface Template {
-  id: string;
-  friendlyName: string;
-  templateName: string;
-  category: string;
-  language: string;
-  body: string;
-  buttons: string[];
-  status: "approved" | "pending" | "rejected";
-  createdAt: string;
-  variables?: Record<string, string>;
-}
+export function TemplateListItem({ template, isAdmin = false, isApprovalView = false, isCatalogView = false, onUseTemplate }: TemplateListItemProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-export interface TemplateListItemProps {
-  template: Template;
-  isAdmin?: boolean;
-  isApprovalView?: boolean;
-  isCatalogView?: boolean;
-}
+  const handleUseTemplate = async () => {
+    if (!onUseTemplate) return;
+    try {
+      setIsSubmitting(true);
+      await onUseTemplate(template);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-export function TemplateListItem({ template, isAdmin = false, isApprovalView = false, isCatalogView = false }: TemplateListItemProps) {
   const variablesCount = template.variables ? Object.keys(template.variables).length : 0;
 
   const renderBody = (text: string) => {
@@ -36,9 +30,9 @@ export function TemplateListItem({ template, isAdmin = false, isApprovalView = f
     });
   };
 
-  // Add a premium glow effect if we are in the approvals view and the template is pending
-  const glowClasses = isApprovalView && template.status === "pending" 
-    ? "border-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.15)] ring-1 ring-amber-100" 
+  // Add a premium glow effect if we are in the approvals view and the template is approved
+  const glowClasses = isApprovalView && template.status === "approved" 
+    ? "border-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-100" 
     : "border-border/60 hover:shadow-md";
 
   return (
@@ -95,9 +89,24 @@ export function TemplateListItem({ template, isAdmin = false, isApprovalView = f
         </div>
         
         {isCatalogView && (
-          <Button variant="default" size="sm" className="bg-slate-900 hover:bg-slate-800 text-white shadow-sm h-8 rounded-md px-3 shrink-0">
-             <FileText className="w-3.5 h-3.5 mr-1.5" />
-             Usar plantilla
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="bg-slate-900 hover:bg-slate-800 text-white shadow-sm h-8 rounded-md px-3 shrink-0"
+            onClick={handleUseTemplate}
+            disabled={isSubmitting}
+          >
+             {isSubmitting ? (
+               <span className="flex items-center">
+                 <div className="w-3.5 h-3.5 mr-1.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                 Enviando...
+               </span>
+             ) : (
+               <>
+                 <FileText className="w-3.5 h-3.5 mr-1.5" />
+                 Usar plantilla
+               </>
+             )}
           </Button>
         )}
       </div>

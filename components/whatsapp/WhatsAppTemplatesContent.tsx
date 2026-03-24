@@ -1,105 +1,28 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { useUser } from "@clerk/nextjs";
 import { TemplateStatCards } from "./TemplateStatCards";
 import { TemplateList } from "./TemplateList";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Plus, Clock, LayoutGrid, FileText, Languages } from "lucide-react";
-import { useAction, useQuery } from "convex/react";
+import { Plus, Clock, LayoutGrid, FileText, Languages } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
 import { AddTemplateDialog } from "./add-template-dialog";
-import { Template } from "./TemplateListItem";
-
-const api = require("@/convex/_generated/api").api;
+import { useWhatsAppTemplates } from "./hooks/useWhatsAppTemplates";
 
 export function WhatsappTemplateContent() {
-  const { user, isLoaded: isUserLoaded } = useUser();
-  const email = user?.primaryEmailAddress?.emailAddress;
-  const isAdmin = useQuery(api.admin.isAdmin, email ? { email } : "skip");
-
-  // Admin tabs
-  const [activeTab, setActiveTab] = useState("globales");
-  // Normal user tabs
-  const [activeUserTab, setActiveUserTab] = useState("catalogo");
-  
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [twilioTemplates, setTwilioTemplates] = useState<Template[]>([]);
-  const [isTwilioLoading, setIsTwilioLoading] = useState(true);
-
-  // Global templates query for non-admins
-  const globalTemplatesRaw = useQuery(api.templates.getGlobalTemplates, isAdmin === false ? {} : "skip");
-
-  const listTemplatesAction = useAction(api.twilio.listWhatsAppTemplates);
-
-  const fetchTwilioTemplates = useCallback(async () => {
-    if (isAdmin !== true) {
-      setIsTwilioLoading(false);
-      return; 
-    }
-    try {
-      setIsTwilioLoading(true);
-      const data = await listTemplatesAction();
-      const mappedTemplates: Template[] = data.map((t: any) => ({
-        id: t.sid,
-        friendlyName: t.friendlyName,
-        templateName: t.friendlyName,
-        category: t.category,
-        language: t.language,
-        body: t.body,
-        variables: t.variables,
-        buttons: t.buttons,
-        status: (t.status === "approved" || t.status === "rejected") ? t.status : "pending",
-        createdAt: t.createdAt ? new Date(t.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      }));
-      setTwilioTemplates(mappedTemplates);
-    } catch (error) {
-      console.error("Error fetching TWILIO templates:", error);
-      toast.error("Error al cargar plantillas de Twilio");
-    } finally {
-      setIsTwilioLoading(false);
-    }
-  }, [listTemplatesAction, isAdmin]);
-
-  useEffect(() => {
-    fetchTwilioTemplates();
-
-    // Polling cada 5 minutos
-    const intervalId = setInterval(fetchTwilioTemplates, 300000);
-    return () => clearInterval(intervalId);
-  }, [fetchTwilioTemplates]);
-
-  const isLoading = !isUserLoaded || isAdmin === undefined || (isAdmin ? isTwilioLoading : globalTemplatesRaw === undefined);
-
-  let templates: Template[] = [];
-  if (isAdmin === true) {
-    templates = twilioTemplates;
-  } else if (isAdmin === false && globalTemplatesRaw) {
-    templates = globalTemplatesRaw.map((t: any) => {
-      let buttons: string[] = [];
-      if (t.types?.["twilio/quick-reply"]) {
-        buttons = (t.types["twilio/quick-reply"].actions || []).map((a: any) => a.title);
-      }
-      return {
-        id: t.sid,
-        friendlyName: t.name,
-        templateName: t.name,
-        variables: t.variables,
-        category: t.category,
-        language: t.language,
-        body: t.body,
-        buttons,
-        status: (t.status === "approved" || t.status === "rejected") ? t.status : "pending",
-        createdAt: t._creationTime ? new Date(t._creationTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      };
-    });
-  }
-
-  const stats = {
-    approved: templates.filter((t) => t.status === "approved").length,
-    pending: templates.filter((t) => t.status === "pending").length,
-    total: templates.length,
-  };
+  const {
+    isAdmin,
+    isLoading,
+    templates,
+    activeTemplates,
+    stats,
+    activeTab,
+    setActiveTab,
+    activeUserTab,
+    setActiveUserTab,
+    isDialogOpen,
+    setIsDialogOpen,
+    handleUseTemplate,
+    fetchTwilioTemplates,
+  } = useWhatsAppTemplates();
 
   if (isLoading) {
     return (
@@ -182,7 +105,7 @@ export function WhatsappTemplateContent() {
               </div>
 
               {templates.length > 0 ? (
-                <TemplateList templates={templates} isCatalogView={true} isAdmin={false} />
+                <TemplateList templates={templates} isCatalogView={true} isAdmin={false} onUseTemplate={handleUseTemplate} />
               ) : (
                 <div className="text-center p-12 border border-dashed border-slate-200 rounded-xl bg-slate-50">
                   <p className="text-slate-500">No hay templates en el catálogo.</p>
@@ -194,25 +117,29 @@ export function WhatsappTemplateContent() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                   <p className="text-sm font-medium text-slate-500 mb-1">Pendientes</p>
-                  <p className="text-3xl font-semibold text-amber-500">0</p>
+                  <p className="text-3xl font-semibold text-amber-500">{activeTemplates.filter((t) => t.status === "pending").length}</p>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                   <p className="text-sm font-medium text-slate-500 mb-1">Aprobadas</p>
-                  <p className="text-3xl font-semibold text-emerald-500">0</p>
+                  <p className="text-3xl font-semibold text-emerald-500">{activeTemplates.filter((t) => t.status === "approved").length}</p>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                   <p className="text-sm font-medium text-slate-500 mb-1">Rechazadas</p>
-                  <p className="text-3xl font-semibold text-red-500">0</p>
+                  <p className="text-3xl font-semibold text-red-500">{activeTemplates.filter((t) => t.status === "rejected").length}</p>
                 </div>
               </div>
 
-              <div className="p-16 flex flex-col items-center justify-center text-center bg-white rounded-xl border border-slate-200 shadow-sm max-w-full lg:max-w-4xl mx-auto">
-                <div className="w-12 h-12 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center mb-4">
-                  <FileText className="w-6 h-6 text-slate-300" />
+              {activeTemplates.length > 0 ? (
+                <TemplateList templates={activeTemplates} isAdmin={false} isCatalogView={false} />
+              ) : (
+                <div className="p-16 flex flex-col items-center justify-center text-center bg-white rounded-xl border border-slate-200 shadow-sm max-w-full lg:max-w-4xl mx-auto">
+                  <div className="w-12 h-12 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center mb-4">
+                    <FileText className="w-6 h-6 text-slate-300" />
+                  </div>
+                  <h3 className="text-slate-900 font-medium mb-1">No tienes plantillas aún</h3>
+                  <p className="text-slate-500 text-sm">Ve al catálogo para seleccionar y traducir plantillas</p>
                 </div>
-                <h3 className="text-slate-900 font-medium mb-1">No tienes plantillas aún</h3>
-                <p className="text-slate-500 text-sm">Ve al catálogo para seleccionar y traducir plantillas</p>
-              </div>
+              )}
             </TabsContent>
           </Tabs>
         ) : (
@@ -239,20 +166,20 @@ export function WhatsappTemplateContent() {
             </TabsContent>
             
             <TabsContent value="aprobaciones" className="mt-0 animate-in fade-in duration-500">
-              <div className="flex items-center gap-2.5 mb-6 text-amber-500 font-medium bg-amber-50/50 w-fit px-3 py-1.5 rounded-full border border-amber-100">
+              <div className="flex items-center gap-2.5 mb-6 text-emerald-500 font-medium bg-emerald-50/50 w-fit px-3 py-1.5 rounded-full border border-emerald-100">
                 <Clock className="w-4 h-4" />
-                <span className="text-sm">Pendientes de aprobación ({stats.pending})</span>
+                <span className="text-sm">Aprobadas por META ({stats.approved})</span>
               </div>
               
-              {stats.pending > 0 ? (
+              {stats.approved > 0 ? (
                 <TemplateList 
-                  templates={templates.filter(t => t.status === "pending" || t.status === "rejected")} 
+                  templates={templates.filter(t => t.status === "approved")} 
                   isAdmin={isAdmin}
                   isApprovalView={true} 
                 />
               ) : (
                 <div className="mt-4 p-12 flex flex-col items-center justify-center text-center bg-white rounded-xl border border-slate-200 shadow-sm max-w-full">
-                   <p className="text-slate-500 font-medium">No hay plantillas pendientes de aprobación</p>
+                   <p className="text-slate-500 font-medium">No hay plantillas aprobadas por META</p>
                 </div>
               )}
             </TabsContent>
