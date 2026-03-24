@@ -75,6 +75,7 @@ export function LandingHeader() {
                 variant="outline"
                 size="sm"
                 className={cn(isScrolled && "lg:hidden")}
+                suppressHydrationWarning
               >
                 <Link href="#">
                   <span>{commonT.navigation.login}</span>
@@ -87,6 +88,7 @@ export function LandingHeader() {
                 asChild
                 size="sm"
                 className={cn(isScrolled && "lg:hidden")}
+                suppressHydrationWarning
               >
                 <Link href="#">
                   <span>{commonT.navigation.signUp}</span>
@@ -99,6 +101,7 @@ export function LandingHeader() {
                 asChild
                 size="sm"
                 className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
+                suppressHydrationWarning
               >
                 <Link href="#">
                   <span>{commonT.navigation.getStarted}</span>

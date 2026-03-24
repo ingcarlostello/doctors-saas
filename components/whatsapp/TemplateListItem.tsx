@@ -1,84 +1,114 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, Clock } from "lucide-react";
+import { Trash2, Calendar, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TemplateListItemProps } from "./types/template.types";
 
-export interface Template {
-  id: string;
-  friendlyName: string;
-  templateName: string;
-  category: string;
-  language: string;
-  body: string;
-  buttons: string[];
-  status: "approved" | "pending" | "rejected";
-  createdAt: string;
-}
+export function TemplateListItem({ template, isAdmin = false, isApprovalView = false, isCatalogView = false, onUseTemplate }: TemplateListItemProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-interface TemplateListItemProps {
-  template: Template;
-}
-
-export function TemplateListItem({ template }: TemplateListItemProps) {
-  const statusConfig = {
-    approved: {
-      label: "Aprobado",
-      icon: CheckCircle2,
-      className: "bg-green-100 text-green-700 border-green-200",
-    },
-    pending: {
-      label: "Pendiente",
-      icon: Clock,
-      className: "bg-amber-100 text-amber-700 border-amber-200",
-    },
-    rejected: {
-      label: "Rechazado",
-      icon: Clock,
-      className: "bg-red-100 text-red-700 border-red-200",
-    },
+  const handleUseTemplate = async () => {
+    if (!onUseTemplate) return;
+    try {
+      setIsSubmitting(true);
+      await onUseTemplate(template);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const status = statusConfig[template.status];
-  const StatusIcon = status.icon;
+  const variablesCount = template.variables ? Object.keys(template.variables).length : 0;
 
-  console.log("Template ==========>", template);
+  const renderBody = (text: string) => {
+    const parts = text.split(/(\{\{\d+\}\})/g);
+    return parts.map((part, i) => {
+      if (part.match(/\{\{\d+\}\}/)) {
+        return <span key={i} className="font-semibold text-foreground">{part}</span>;
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
+  // Add a premium glow effect if we are in the approvals view and the template is approved
+  const glowClasses = isApprovalView && template.status === "approved" 
+    ? "border-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-100" 
+    : "border-border/60 hover:shadow-md";
 
   return (
-    <Card className="p-5">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
-        <h3 className="font-semibold text-foreground">{template.friendlyName}</h3>
-        <Badge variant="outline" className={status.className}>
-          <StatusIcon className="w-3 h-3 mr-1" />
-          {status.label}
-        </Badge>
-        <Badge variant="secondary">{template.category}</Badge>
-      </div>
-
-      {/* Body Preview */}
-      <div className="bg-muted/50 rounded-lg p-3 mb-3">
-        <p className="text-sm text-muted-foreground">{template.body}</p>
-      </div>
-
-      {/* Buttons */}
-      {template.buttons.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          {template.buttons.map((btn, index) => (
-            <Badge
-              key={index}
-              variant="outline"
-              className="bg-background text-foreground border-border px-3 py-1 font-normal"
-            >
-              {btn}
-            </Badge>
-          ))}
+    <Card className={`p-6 overflow-hidden rounded-xl transition-all duration-300 bg-white flex flex-col justify-between ${glowClasses}`}>
+      <div>
+        <div className="flex justify-between items-start mb-2">
+          <h3 className="font-semibold text-lg text-foreground tracking-tight">
+            {template.friendlyName}
+          </h3>
+          {isAdmin && (
+            <button className="text-destructive/70 hover:text-destructive transition-colors mt-1" title="Eliminar plantilla">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
-      )}
 
-      {/* Footer */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <span>Nombre: <code className="bg-muted px-1 rounded">{template.templateName}</code></span>
-        <span>Idioma: {template.language.toUpperCase()}</span>
-        <span>Creado: {template.createdAt}</span>
+        <div className="flex items-center gap-2 mb-4 text-xs font-medium">
+          <Badge variant="secondary" className="bg-muted text-foreground/80 hover:bg-muted px-2.5 py-0.5 rounded-md border-transparent text-xs">
+            {template.category}
+          </Badge>
+          <span className="text-muted-foreground/60">&bull;</span>
+          <span className="text-muted-foreground">{variablesCount} variables</span>
+        </div>
+
+        <div className="bg-muted/40 rounded-lg p-4 mb-5 text-sm text-foreground/90 leading-relaxed border border-border/40 min-h-[80px]">
+          {renderBody(template.body)}
+        </div>
+
+        {template.buttons.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-5">
+            {template.buttons.map((btn, index) => (
+              <Badge
+                key={index}
+                variant="outline"
+                className="rounded-full bg-emerald-50 text-emerald-700 border-emerald-200 px-3 py-1 font-normal text-xs"
+              >
+                {btn}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground pt-4 border-t border-border/30 mt-auto">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Calendar className="w-3.5 h-3.5 opacity-70" />
+          <span>Creada el {new Date(template.createdAt).toLocaleDateString()}</span>
+          {!isCatalogView && (
+            <>
+              <span className="opacity-50">&bull;</span>
+              <span>por Admin</span>
+            </>
+          )} 
+        </div>
+        
+        {isCatalogView && (
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="bg-slate-900 hover:bg-slate-800 text-white shadow-sm h-8 rounded-md px-3 shrink-0"
+            onClick={handleUseTemplate}
+            disabled={isSubmitting}
+          >
+             {isSubmitting ? (
+               <span className="flex items-center">
+                 <div className="w-3.5 h-3.5 mr-1.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                 Enviando...
+               </span>
+             ) : (
+               <>
+                 <FileText className="w-3.5 h-3.5 mr-1.5" />
+                 Usar plantilla
+               </>
+             )}
+          </Button>
+        )}
       </div>
     </Card>
   );

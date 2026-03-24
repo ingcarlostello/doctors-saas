@@ -23,7 +23,7 @@ export function LanguageSwitcher() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
+                <Button variant="ghost" size="sm" className="gap-2" suppressHydrationWarning>
                     <Globe className="h-4 w-4" />
                     <span className="hidden sm:inline">
                         {i18nConfig.localeFlags[locale]} {i18nConfig.localeNames[locale]}
